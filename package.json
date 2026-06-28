@@ -13,6 +13,7 @@
     "dev:worker": "npm --workspace services/worker run dev",
     "build": "npm --workspaces --if-present run build",
     "typecheck": "npm --workspaces --if-present run typecheck",
+    "test": "npm --workspaces --if-present run test",
     "lint": "npm --workspaces --if-present run lint",
     "db:reset": "echo 'Run: supabase db reset (applies supabase/migrations + seed.sql)'"
   },

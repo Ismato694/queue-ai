@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
 import { useSession } from '@/lib/useSession';
 import { Button, Card, Field } from '@/lib/ui';
+import { cacheGet, cacheSet } from '@/lib/cache';
 
 type Row = Record<string, any>;
 const ACUITY_NEXT: Record<string, 'routine' | 'priority' | 'emergency'> = {
@@ -23,6 +24,7 @@ export default function Reception() {
   const [phone, setPhone] = useState('');
   const [acuity, setAcuity] = useState<'routine' | 'priority' | 'emergency'>('routine');
   const [now, setNow] = useState(Date.now());
+  const [offline, setOffline] = useState(false);
 
   // config: branches + departments
   useEffect(() => {
@@ -40,12 +42,23 @@ export default function Reception() {
 
   const loadQueue = useCallback(async () => {
     if (!branchId || !deptId) return;
-    const { data } = await getSupabase()
-      .from('reception_queue').select('*')
-      .eq('branch_id', branchId).eq('department_id', deptId)
-      .order('acuity', { ascending: false })
-      .order('position', { ascending: true });
-    setQueue(data ?? []);
+    const cacheKey = `queue:${branchId}:${deptId}`;
+    try {
+      const { data, error } = await getSupabase()
+        .from('reception_queue').select('*')
+        .eq('branch_id', branchId).eq('department_id', deptId)
+        .order('acuity', { ascending: false })
+        .order('position', { ascending: true });
+      if (error) throw error;
+      setQueue(data ?? []);
+      cacheSet(cacheKey, data ?? []);
+      setOffline(false);
+    } catch {
+      // network blip — fall back to last-good cache so the desk keeps working (R5)
+      const cached = cacheGet<Row[]>(cacheKey);
+      if (cached) setQueue(cached);
+      setOffline(true);
+    }
   }, [branchId, deptId]);
 
   // Supabase Realtime (live) + a slow poll fallback + a clock for "waited" times
@@ -88,6 +101,11 @@ export default function Reception() {
     <div className="min-h-screen">
       <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
         <span className="text-sm font-semibold text-accent">Queue.ai · Reception</span>
+        {offline && (
+          <span className="rounded-control bg-status-busy/10 px-2 py-1 text-xs text-status-busy">
+            ⚠ Offline — showing last-known queue
+          </span>
+        )}
         <button className="text-xs text-neutral-500 underline"
           onClick={async () => { await sb.auth.signOut(); router.push('/login'); }}>Sign out</button>
       </header>
