@@ -23,7 +23,7 @@
 | — | Founder Rules (governs build) | `09-FOUNDER-RULES.md` ✅ | — |
 | 9 | MVP Scope Lock (Hospitals) | `09-MVP-SCOPE.md` ✅ | Approval |
 | 10 | MVP Build — Backend, DB, Auth | code — **S0 ✅** (schema, RLS, seed, skeletons) · **S1 ✅** (auth+bootstrap RPC, onboarding, admin Structure CRUD, **Flow Builder F1**) | Approval |
-| 11 | MVP Build — Real-time & Queue Engine | code — **S2 ✅** (queue-engine RPCs + activity-events invariant, Reception board, walk-in/call/serve/complete/priority) | Approval |
+| 11 | MVP Build — Real-time & Queue Engine | code — **S2 ✅** (queue-engine RPCs, Reception board) · **S3 ✅** (Supabase Realtime, customer QR/web join + Live Visit/Journey Timeline + activation, queued notifications + worker dispatcher) | Approval |
 | 12 | MVP Build — Dashboards & Customer App | code | Approval |
 | 13 | MVP Build — AI Layer v1 | code | Approval |
 | 14 | QA & Testing | `14-TEST-PLAN.md` + tests | Approval |

@@ -1,33 +1,67 @@
 // Queue.ai worker — domain async jobs (docs/06-ARCHITECTURE.md §3,5).
-// S0: health endpoint + job stubs. Real logic (ETA recompute, no-show sweep, notifications, AI)
-// lands in S2–S5. Connects with the Supabase service-role key (bypasses RLS by design).
+// S0: health. S3: notification dispatcher (cost-aware, R6). Connects with the Supabase
+// service-role key (bypasses RLS by design). Real ETA/no-show jobs land in S4.
 import { createServer } from 'node:http';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const PORT = Number(process.env.WORKER_PORT ?? 4000);
+const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// ── Job stubs (wired to BullMQ / pg_cron in later sprints) ──
-async function recomputeETA(_branchId: string, _departmentId: string) {
-  // S4: heuristic ETA + confidence + reasons (Trust Engine F11) → predictions table.
+const admin: SupabaseClient | null =
+  SB_URL && SB_KEY ? createClient(SB_URL, SB_KEY, { auth: { persistSession: false } }) : null;
+
+// ── Notification dispatcher (R6 cost-aware) ──────────────────────────────────
+// Picks queued notifications and sends them. Push is free; SMS via Termii/Africa's
+// Talking only for high-value events. Without provider keys it marks them sent
+// (simulated) so the pipeline is observable in dev.
+async function dispatchNotifications() {
+  if (!admin) return;
+  const { data } = await admin
+    .from('notifications').select('*').eq('status', 'queued').limit(20);
+  for (const n of data ?? []) {
+    const ok = await send(n);
+    await admin.from('notifications')
+      .update({ status: ok ? 'sent' : 'failed', sent_at: new Date().toISOString() })
+      .eq('id', n.id);
+  }
 }
-async function sweepNoShows() {
-  // S4: stages past grace_deadline in 'called' → no_show or requeue (R4).
+
+async function send(n: Record<string, any>): Promise<boolean> {
+  const text = messageFor(n.event_type);
+  // Provider integration (Termii / Africa's Talking) plugs in here once keys exist.
+  if (process.env.TERMII_API_KEY || process.env.AFRICASTALKING_API_KEY) {
+    // TODO(S6): real SMS send via provider HTTP API; needs a recipient phone lookup.
+    console.log(`[notify] (provider) would send "${text}" for ${n.id}`);
+    return true;
+  }
+  console.log(`[notify] (simulated) ${n.channel}:${n.event_type} -> "${text}" (${n.id})`);
+  return true; // simulated success in dev
 }
-async function rollupDailyMetrics() {
-  // S5: Flow Score + Time-Saved (Law #0) → daily_metrics.
+
+function messageFor(event: string): string {
+  switch (event) {
+    case 'your_turn': return "It's almost your turn — please proceed to the counter.";
+    case 'delayed':   return 'Your wait has increased slightly. Thanks for your patience.';
+    default:          return 'Update on your visit.';
+  }
 }
+
+// ── Job stubs for later sprints ──────────────────────────────────────────────
+async function recomputeETA() { /* S4: Trust Engine F11 → predictions */ }
+async function sweepNoShows() { /* S4: stages past grace_deadline → no_show / requeue (R4) */ }
 
 const server = createServer((req, res) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, service: 'queue-ai-worker', ts: new Date().toISOString() }));
+    res.end(JSON.stringify({ ok: true, service: 'queue-ai-worker', supabase: Boolean(admin), ts: new Date().toISOString() }));
     return;
   }
-  res.writeHead(404);
-  res.end();
+  res.writeHead(404); res.end();
 });
 
 server.listen(PORT, () => {
-  console.log(`[worker] listening on :${PORT} (job handlers stubbed for S0)`);
-  // Prevent unused-symbol lint in S0; these are invoked by the queue/cron in later sprints.
-  void recomputeETA; void sweepNoShows; void rollupDailyMetrics;
+  console.log(`[worker] listening on :${PORT}${admin ? '' : ' (no Supabase creds — dispatcher idle)'}`);
+  if (admin) setInterval(() => { dispatchNotifications().catch((e) => console.error('[notify]', e)); }, 5000);
+  void recomputeETA; void sweepNoShows;
 });

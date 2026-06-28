@@ -48,12 +48,17 @@ export default function Reception() {
     setQueue(data ?? []);
   }, [branchId, deptId]);
 
-  // poll (realtime arrives in S3) + a clock for "waited" times
+  // Supabase Realtime (live) + a slow poll fallback + a clock for "waited" times
   useEffect(() => {
     loadQueue();
-    const q = setInterval(loadQueue, 4000);
     const c = setInterval(() => setNow(Date.now()), 1000);
-    return () => { clearInterval(q); clearInterval(c); };
+    const poll = setInterval(loadQueue, 8000); // fallback for poor networks
+    const sb = getSupabase();
+    const ch = sb
+      .channel('reception-queue')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'visit_stages' }, () => loadQueue())
+      .subscribe();
+    return () => { clearInterval(c); clearInterval(poll); sb.removeChannel(ch); };
   }, [loadQueue]);
 
   if (loading) return <main className="p-10 text-sm text-neutral-500">Loading…</main>;
