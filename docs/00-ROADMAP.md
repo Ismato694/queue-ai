@@ -22,15 +22,20 @@
 | 8 | Security & Compliance | `08-SECURITY.md` ✅ | Approval |
 | — | Founder Rules (governs build) | `09-FOUNDER-RULES.md` ✅ | — |
 | 9 | MVP Scope Lock (Hospitals) | `09-MVP-SCOPE.md` ✅ | Approval |
-| 10 | MVP Build — Backend, DB, Auth | code — **S0 ✅** (schema, RLS, seed, skeletons) · **S1 ✅** (auth+bootstrap RPC, onboarding, admin Structure CRUD, **Flow Builder F1**) | Approval |
-| 11 | MVP Build — Real-time & Queue Engine | code — **S2 ✅** (queue-engine RPCs, Reception board) · **S3 ✅** (Supabase Realtime, customer QR/web join + Live Visit/Journey Timeline + activation, queued notifications + worker dispatcher) | Approval |
-| 12 | MVP Build — Dashboards & Customer App | code — **S4 ✅** (Trust Engine ETA+confidence+reasons, Staff app, Public display, no-show grace sweep) | Approval |
-| 13 | MVP Build — AI Layer v1 | code — **S5 ✅** (Manager dashboard: Flow Score + Digital Twin + Time-Saved + grounded assistant, Claude swap-in ready) · **S6 ✅** (offline cache R5, a11y, PWA manifest, indexes, state-machine tests). **MVP build feature-complete (S0–S6)** | Approval |
+| 10 | Customer Flow OS Build — Backend, DB, Auth | code — **S0 ✅** (schema, RLS, seed, skeletons) · **S1 ✅** (auth+bootstrap RPC, onboarding, admin Structure CRUD, **Flow Builder F1**) | Approval |
+| 11 | Customer Flow OS Build — Real-time & Queue Engine | code — **S2 ✅** (queue-engine RPCs, Reception board) · **S3 ✅** (Supabase Realtime, customer QR/web join + Live Visit/Journey Timeline + activation, queued notifications + worker dispatcher) | Approval |
+| 12 | Customer Flow OS Build — Dashboards & Customer App | code — **S4 ✅** (Trust Engine ETA+confidence+reasons, Staff app, Public display, no-show grace sweep) | Approval |
+| 13 | Customer Flow OS Build — **Flow Intelligence v1** | code — **S5 ✅** (Manager dashboard: Flow Score + Digital Twin + Hours Returned + grounded assistant, Claude swap-in ready) · **S6 ✅** (offline cache R5, a11y, PWA manifest, indexes, state-machine tests). **Build feature-complete (S0–S6)** | Approval |
+| **13.5** | **Pilot Validation** ⭐ (one real hospital, 2–4 weeks) | `13b-PILOT-VALIDATION.md` | **Approval** |
 | 14 | QA & Testing | `14-TEST-PLAN.md` + tests | Approval |
 | 15 | DevOps & Deployment | infra + `15-DEVOPS.md` | Approval |
 | 16 | Industry Expansion | templates | Approval |
+| 16.5 | **Flow Intelligence v2** (post-pilot, data-driven) | Capacity AI (F2) · Predictive Ops (F13) · Simulation (F5) · Org Memory (F14) · auto queue-balancing | Approval |
+| 17 | **Commercialization** | `17-COMMERCIALIZATION.md` (sales · success · marketing · partnerships · analytics) | Approval |
 
 **Rule:** Stop after every phase. Wait for explicit approval before starting the next.
+
+> **Sequence change (CTO):** Build (13) → **Pilot Validation (13.5)** → QA (14) → Deploy (15). Real users reshape the product *before* we optimize it. AI is split: **v1** (ETA/Flow Score/Twin/grounded assistant — shipped) and **v2** (16.5, after the pilot generates real data). **Hours Returned** is a first-class KPI shown on every dashboard.
 
 ---
 
@@ -93,3 +98,4 @@ Decisions are recorded here as phases are approved, so later phases stay consist
 | 2026-06-27 | **Business case modeled** — `BUSINESS-OS.md` (why buy/switch, ROI 30/90/365, pricing, 1-day onboarding, paper migration, full objection-handling) | Modeled ~5–10× monthly ROI on the medium-hospital profile; risk-free "we measure your loss free for 2 weeks" offer enabled by baseline mode (R8). Pricing illustrative; validate at Phase 9 pilot. |
 | 2026-06-28 | **Founder Rules adopted** — `09-FOUNDER-RULES.md` (ship>perfection; 3-question feature gate incl. <2-week buildability + willingness-to-pay; no "cool" features; optimize for first paying hospital; demo every sprint; never break "remove decisions"; measure outcomes not code) | Governs Phases 9–16; adds buildability + WTP tests on top of the Law #0 feature eval. Tie-breaker for scope/build decisions. |
 | 2026-06-28 | **MVP SCOPE LOCKED + vision frozen** — `09-MVP-SCOPE.md`. **Tech stack LOCKED: Supabase (af-south-1) + Next.js + Node/NestJS worker + Claude** (supersedes 01c recommendation; managed-first for speed). MFA: admin-recommended, pilot-optional, org-enforceable. F2/F5/F13/F14 + WhatsApp/native/HMS/F6/F7/F9/F10 → V2 | Optimize for first paying hospital; ship→learn→validate. Offline full-sync scoped to fast-follow (online+cache+SMS+paper in MVP). 7-sprint backlog (S0–S6), each demoable. Schema/API/arch/security carry over unchanged (Supabase = Postgres+RLS). |
+| 2026-06-28 | **CTO roadmap changes**: inserted **13.5 Pilot Validation** before QA; split AI into **v1 (shipped)** / **v2 = 16.5 (post-pilot)**; added **17 Commercialization**; renamed "MVP Build" → "Customer Flow OS Build"; **"Hours Returned" = first-class KPI** on every dashboard (Today / This Month / Since Joining) | Real-world pilot teaches what planning can't (staff adoption, channel preference, what managers value); build v2 AI on real data; keep mission visible via Hours Returned. `13b-PILOT-VALIDATION.md`, `17-COMMERCIALIZATION.md`. |

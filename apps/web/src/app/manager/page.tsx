@@ -19,6 +19,7 @@ export default function ManagerPage() {
   const [branches, setBranches] = useState<Row[]>([]);
   const [branchId, setBranchId] = useState('');
   const [o, setO] = useState<Overview | null>(null);
+  const [hr, setHr] = useState<{ today_seconds: number; month_seconds: number; lifetime_seconds: number } | null>(null);
   const [q, setQ] = useState('');
   const [a, setA] = useState<AssistantResult | null>(null);
 
@@ -31,8 +32,13 @@ export default function ManagerPage() {
 
   const load = useCallback(async () => {
     if (!branchId) return;
-    const { data } = await getSupabase().rpc('get_flow_overview', { p_branch_id: branchId });
-    if (data) setO(data as Overview);
+    const sb = getSupabase();
+    const [ov, hours] = await Promise.all([
+      sb.rpc('get_flow_overview', { p_branch_id: branchId }),
+      sb.rpc('get_hours_returned', { p_branch_id: branchId }),
+    ]);
+    if (ov.data) setO(ov.data as Overview);
+    if (hours.data) setHr(hours.data as typeof hr);
   }, [branchId]);
 
   useEffect(() => {
@@ -62,6 +68,18 @@ export default function ManagerPage() {
       <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
         {!o ? <p className="text-sm text-neutral-500">Loading overview…</p> : (
           <>
+            {/* Hours Returned — the mission KPI, everywhere (Law #0) */}
+            {hr && (
+              <div className="rounded-card bg-neutral-900 p-5 text-white">
+                <p className="text-xs uppercase tracking-widest text-neutral-400">Hours Returned</p>
+                <div className="mt-2 flex flex-wrap gap-10">
+                  <HR label="Today" seconds={hr.today_seconds} big />
+                  <HR label="This month" seconds={hr.month_seconds} />
+                  <HR label="Since joining" seconds={hr.lifetime_seconds} />
+                </div>
+              </div>
+            )}
+
             {/* Flow Score hero + quiet metrics */}
             <div className="flex flex-wrap items-center gap-8">
               <div>
@@ -109,6 +127,17 @@ export default function ManagerPage() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+function HR({ label, seconds, big }: { label: string; seconds: number; big?: boolean }) {
+  const hours = (seconds / 3600);
+  const txt = hours >= 100 ? Math.round(hours).toLocaleString() : hours.toFixed(1);
+  return (
+    <div>
+      <p className="text-xs text-neutral-400">{label}</p>
+      <p className={`tnum font-semibold ${big ? 'text-4xl text-status-calm' : 'text-2xl'}`}>{txt}<span className="ml-1 text-base text-neutral-400">h</span></p>
     </div>
   );
 }
