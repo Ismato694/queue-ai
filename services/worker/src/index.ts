@@ -47,9 +47,20 @@ function messageFor(event: string): string {
   }
 }
 
-// ── Job stubs for later sprints ──────────────────────────────────────────────
-async function recomputeETA() { /* S4: Trust Engine F11 → predictions */ }
-async function sweepNoShows() { /* S4: stages past grace_deadline → no_show / requeue (R4) */ }
+// ── No-show grace sweep (R4): called stages past their grace_deadline → no_show ──
+async function sweepNoShows() {
+  if (!admin) return;
+  const { data } = await admin
+    .from('visit_stages').select('id, organization_id, visit_id')
+    .eq('state', 'called').lt('grace_deadline', new Date().toISOString()).limit(50);
+  for (const s of data ?? []) {
+    await admin.from('visit_stages').update({ state: 'no_show', entered_state_at: new Date().toISOString() }).eq('id', s.id);
+    await admin.from('activity_events').insert({
+      organization_id: s.organization_id, entity_type: 'visit_stage', entity_id: s.id,
+      event_type: 'state_change', from_state: 'called', to_state: 'no_show', actor_type: 'system',
+    });
+  }
+}
 
 const server = createServer((req, res) => {
   if (req.url === '/health') {
@@ -61,7 +72,9 @@ const server = createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[worker] listening on :${PORT}${admin ? '' : ' (no Supabase creds — dispatcher idle)'}`);
-  if (admin) setInterval(() => { dispatchNotifications().catch((e) => console.error('[notify]', e)); }, 5000);
-  void recomputeETA; void sweepNoShows;
+  console.log(`[worker] listening on :${PORT}${admin ? '' : ' (no Supabase creds — jobs idle)'}`);
+  if (admin) {
+    setInterval(() => { dispatchNotifications().catch((e) => console.error('[notify]', e)); }, 5000);
+    setInterval(() => { sweepNoShows().catch((e) => console.error('[sweep]', e)); }, 15000);
+  }
 });

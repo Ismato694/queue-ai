@@ -4,7 +4,12 @@ import { useParams } from 'next/navigation';
 import { getSupabase, supabaseConfigured } from '@/lib/supabase';
 
 type Stage = { name: string; state: string; is_current: boolean };
-type Status = { branch_name: string; status: string; eta_seconds: number | null; stages: Stage[] };
+type Status = {
+  branch_name: string; status: string;
+  eta_low_s: number | null; eta_high_s: number | null;
+  confidence: number | null; reasons: string[]; stages: Stage[];
+};
+const mins = (s: number) => Math.max(1, Math.round(s / 60));
 
 export default function VisitPage() {
   const id = String(useParams().id);
@@ -47,9 +52,25 @@ export default function VisitPage() {
         <div className="mt-4">
           <p className="text-sm text-neutral-500">You'll be seen in</p>
           <p className="tnum text-4xl font-semibold">
-            {s.eta_seconds == null ? 'calculating…' : `~${Math.max(1, Math.round(s.eta_seconds / 60))} min`}
+            {s.eta_low_s == null || s.eta_high_s == null
+              ? 'calculating…'
+              : mins(s.eta_low_s) === mins(s.eta_high_s)
+                ? `~${mins(s.eta_high_s)} min`
+                : `${mins(s.eta_low_s)}–${mins(s.eta_high_s)} min`}
           </p>
-          <p className="mt-1 text-xs text-neutral-400">Estimate — confidence &amp; reasons arrive in the next build (Trust Engine).</p>
+          {s.confidence != null && (
+            <div className="mt-2">
+              <p className="text-sm text-neutral-600">{Math.round(s.confidence * 100)}% confidence</p>
+              <div className="mt-1 h-1.5 w-40 overflow-hidden rounded-full bg-neutral-200">
+                <div className="h-full bg-status-calm" style={{ width: `${Math.round(s.confidence * 100)}%` }} />
+              </div>
+              {s.reasons?.length > 0 && (
+                <ul className="mt-2 text-xs text-neutral-500">
+                  {s.reasons.map((r, i) => <li key={i}>• {r}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       )}
 
