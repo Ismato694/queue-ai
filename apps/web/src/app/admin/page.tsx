@@ -14,6 +14,7 @@ export default function AdminHome() {
         <Link href="/admin/flows"><Card title="Flow Builder (F1)">Define the patient journey →</Card></Link>
         <Link href="/reception"><Card title="Reception board">Run the live queue →</Card></Link>
         <Link href="/staff"><Card title="Staff view">Call next · complete →</Card></Link>
+        <Link href="/manager"><Card title="Manager dashboard">Flow Score · Digital Twin · Flow Intelligence →</Card></Link>
       </div>
       <p className="text-xs text-neutral-500">
         Public display: open <code>/display/&lt;branch QR token&gt;</code> on a waiting-room screen (numbers only).
