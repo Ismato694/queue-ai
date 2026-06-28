@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+
+/* tabular figures so live numbers/ETAs don't jitter (03a §5.1) */
+.tnum { font-variant-numeric: tabular-nums; }
+
+body { @apply bg-neutral-50 text-neutral-900 antialiased; }

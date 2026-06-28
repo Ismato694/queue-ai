@@ -1,0 +1,19 @@
+'use client';
+import Link from 'next/link';
+import { Card } from '@/lib/ui';
+
+export default function AdminHome() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Admin</h1>
+        <p className="text-sm text-neutral-600">Configure your hospital, then build its flow.</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link href="/admin/structure"><Card title="Structure">Branches · departments · services · staff →</Card></Link>
+        <Link href="/admin/flows"><Card title="Flow Builder (F1)">Define the patient journey →</Card></Link>
+      </div>
+      <p className="text-xs text-neutral-400">Law #0 — Time is the Product. Every screen removes a decision.</p>
+    </div>
+  );
+}
