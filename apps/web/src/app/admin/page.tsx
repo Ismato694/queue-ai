@@ -12,6 +12,7 @@ export default function AdminHome() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Link href="/admin/structure"><Card title="Structure">Branches · departments · services · staff →</Card></Link>
         <Link href="/admin/flows"><Card title="Flow Builder (F1)">Define the patient journey →</Card></Link>
+        <Link href="/reception"><Card title="Reception board">Run the live queue →</Card></Link>
       </div>
       <p className="text-xs text-neutral-400">Law #0 — Time is the Product. Every screen removes a decision.</p>
     </div>
