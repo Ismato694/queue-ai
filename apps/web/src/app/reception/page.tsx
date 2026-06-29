@@ -5,8 +5,8 @@ import { getSupabase } from '@/lib/supabase';
 import { useSession } from '@/lib/useSession';
 import { Button, Card, Field } from '@/lib/ui';
 import { cacheGet, cacheSet } from '@/lib/cache';
+import type { Branch, Department, QueueRow } from '@queue-ai/shared';
 
-type Row = Record<string, any>;
 const ACUITY_NEXT: Record<string, 'routine' | 'priority' | 'emergency'> = {
   routine: 'priority', priority: 'emergency', emergency: 'routine',
 };
@@ -15,11 +15,11 @@ const acuityDot = (a: string) => (a === 'emergency' ? '🔴' : a === 'priority' 
 export default function Reception() {
   const router = useRouter();
   const { loading, userId, organizationId } = useSession();
-  const [branches, setBranches] = useState<Row[]>([]);
-  const [departments, setDepartments] = useState<Row[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [branchId, setBranchId] = useState('');
   const [deptId, setDeptId] = useState('');
-  const [queue, setQueue] = useState<Row[]>([]);
+  const [queue, setQueue] = useState<QueueRow[]>([]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [acuity, setAcuity] = useState<'routine' | 'priority' | 'emergency'>('routine');
@@ -48,20 +48,20 @@ export default function Reception() {
         .from('reception_queue').select('*')
         .eq('branch_id', branchId).eq('department_id', deptId)
         .order('acuity', { ascending: false })
-        .order('position', { ascending: true });
+        .order('position', { ascending: true }).limit(200);
       if (error) throw error;
       setQueue(data ?? []);
       cacheSet(cacheKey, data ?? []);
       setOffline(false);
     } catch {
       // network blip — fall back to last-good cache so the desk keeps working (R5)
-      const cached = cacheGet<Row[]>(cacheKey);
+      const cached = cacheGet<QueueRow[]>(cacheKey);
       if (cached) setQueue(cached);
       setOffline(true);
     }
   }, [branchId, deptId]);
 
-  // Supabase Realtime (live) + a slow poll fallback + a clock for "waited" times
+  // Supabase Realtime (live, org-scoped) + a slow poll fallback + a clock for "waited" times
   useEffect(() => {
     loadQueue();
     const c = setInterval(() => setNow(Date.now()), 1000);
@@ -69,17 +69,19 @@ export default function Reception() {
     const sb = getSupabase();
     const ch = sb
       .channel('reception-queue')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'visit_stages' }, () => loadQueue())
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'visit_stages', filter: `organization_id=eq.${organizationId}` },
+        () => loadQueue())
       .subscribe();
     return () => { clearInterval(c); clearInterval(poll); sb.removeChannel(ch); };
-  }, [loadQueue]);
+  }, [loadQueue, organizationId]);
 
   if (loading) return <main className="p-10 text-sm text-muted">Loading…</main>;
   if (!userId) { router.push('/login'); return null; }
   if (!organizationId) { router.push('/onboarding'); return null; }
 
   const sb = getSupabase();
-  const rpc = async (fn: string, args: Row) => {
+  const rpc = async (fn: string, args: Record<string, unknown>) => {
     const { error } = await sb.rpc(fn, args);
     if (error) { alert(`${fn} failed: ${error.message}`); return; }
     await loadQueue();
@@ -171,7 +173,7 @@ export default function Reception() {
 }
 
 function Picker({ label, value, onChange, options }:
-  { label: string; value: string; onChange: (v: string) => void; options: Row[] }) {
+  { label: string; value: string; onChange: (v: string) => void; options: { id: string; name: string }[] }) {
   return (
     <label className="text-sm">
       <span className="mb-1 block text-muted">{label}</span>

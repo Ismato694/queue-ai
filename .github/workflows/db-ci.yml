@@ -36,3 +36,5 @@ jobs:
         run: $PSQL -f supabase/dev/smoke_test.sql
       - name: RLS tenant-isolation test
         run: $PSQL -f supabase/test/10_rls_isolation.sql
+      - name: State-machine transition parity
+        run: $PSQL -f supabase/test/20_transition_parity.sql

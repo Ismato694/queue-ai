@@ -16,10 +16,10 @@ export default function StructurePage() {
   const load = useCallback(async () => {
     const sb = getSupabase();
     const [b, d, s, st] = await Promise.all([
-      sb.from('branches').select('*').order('created_at'),
-      sb.from('departments').select('*').order('created_at'),
-      sb.from('services').select('*').order('created_at'),
-      sb.from('staff').select('*').order('created_at'),
+      sb.from('branches').select('*').order('created_at').limit(500),
+      sb.from('departments').select('*').order('created_at').limit(500),
+      sb.from('services').select('*').order('created_at').limit(500),
+      sb.from('staff').select('*').order('created_at').limit(500),
     ]);
     setBranches(b.data ?? []); setDepartments(d.data ?? []);
     setServices(s.data ?? []); setStaff(st.data ?? []);

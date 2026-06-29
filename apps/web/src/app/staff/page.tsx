@@ -34,11 +34,13 @@ export default function StaffPage() {
     loadQueue();
     const sb = getSupabase();
     const ch = sb.channel('staff-queue')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'visit_stages' }, () => loadQueue())
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'visit_stages', filter: `organization_id=eq.${organizationId}` },
+        () => loadQueue())
       .subscribe();
     const poll = setInterval(loadQueue, 8000);
     return () => { clearInterval(poll); sb.removeChannel(ch); };
-  }, [loadQueue]);
+  }, [loadQueue, organizationId]);
 
   if (loading) return <main className="p-10 text-sm text-muted">Loading…</main>;
   if (!userId) { router.push('/login'); return null; }

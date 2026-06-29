@@ -54,10 +54,12 @@ export default function ManagerPage() {
   useEffect(() => {
     load();
     const sb = getSupabase();
-    const ch = sb.channel('mgr').on('postgres_changes', { event: '*', schema: 'public', table: 'visit_stages' }, () => load()).subscribe();
+    const ch = sb.channel('mgr').on('postgres_changes',
+      { event: '*', schema: 'public', table: 'visit_stages', filter: `organization_id=eq.${organizationId}` },
+      () => load()).subscribe();
     const poll = setInterval(load, 8000);
     return () => { clearInterval(poll); sb.removeChannel(ch); };
-  }, [load]);
+  }, [load, organizationId]);
 
   if (loading) return <main className="p-10 text-sm text-muted">Loading…</main>;
   if (!userId) { router.push('/login'); return null; }

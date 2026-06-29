@@ -52,6 +52,9 @@ export interface JourneyStage {
   position?: number;
 }
 
+// Typed DB row / RPC shapes (audit M3)
+export * from './db.ts';
+
 // Realtime channel naming (docs/05-API.md §5)
 export const channels = {
   visit: (visitId: string) => `visit:${visitId}`,
