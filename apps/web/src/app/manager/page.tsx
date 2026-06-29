@@ -22,6 +22,8 @@ export default function ManagerPage() {
   const [hr, setHr] = useState<{ today_seconds: number; month_seconds: number; lifetime_seconds: number } | null>(null);
   const [q, setQ] = useState('');
   const [a, setA] = useState<AssistantResult | null>(null);
+  const [ops, setOps] = useState<Row[]>([]);
+  const [sim, setSim] = useState<Row | null>(null);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -33,13 +35,21 @@ export default function ManagerPage() {
   const load = useCallback(async () => {
     if (!branchId) return;
     const sb = getSupabase();
-    const [ov, hours] = await Promise.all([
+    const [ov, hours, pops] = await Promise.all([
       sb.rpc('get_flow_overview', { p_branch_id: branchId }),
       sb.rpc('get_hours_returned', { p_branch_id: branchId }),
+      sb.rpc('get_predictive_ops', { p_branch_id: branchId }),
     ]);
     if (ov.data) setO(ov.data as Overview);
     if (hours.data) setHr(hours.data as typeof hr);
+    setOps((pops.data as Row[]) ?? []);
   }, [branchId]);
+
+  const runSim = async (add: number, remove: number) => {
+    const { data } = await getSupabase().rpc('simulate_branch',
+      { p_branch_id: branchId, p_add_staff: add, p_remove_staff: remove });
+    setSim(data as Row);
+  };
 
   useEffect(() => {
     load();
@@ -104,6 +114,43 @@ export default function ManagerPage() {
                   </div>
                 ))}
               </div>
+            </Card>
+
+            {/* Predictive Operations (F13) + Capacity recommendation */}
+            <Card title="⚠ Predictive Operations">
+              {ops.length === 0 ? (
+                <p className="text-sm text-status-calm">No bottlenecks predicted — all departments within target.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {ops.map((w, i) => (
+                    <li key={i} className="rounded-control border border-status-busy/30 bg-status-busy/5 p-3 text-sm">
+                      <p className="font-medium text-neutral-800">
+                        {w.department} will stay overloaded ~{w.clear_min} min ({w.waiting} waiting · {w.servers} staff)
+                      </p>
+                      <p className="text-neutral-600">→ {w.recommend} (projected clear ~{w.projected_clear_min} min)</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-2 text-xs text-neutral-400">Heuristic forecast — sharpens as the pilot accumulates data (v2).</p>
+            </Card>
+
+            {/* Simulation (F5) — what-if staffing */}
+            <Card title="🔮 Simulation — what if?">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="ghost" onClick={() => runSim(1, 0)}>+1 staff</Button>
+                <Button variant="ghost" onClick={() => runSim(2, 0)}>+2 staff</Button>
+                <Button variant="ghost" onClick={() => runSim(0, 1)}>−1 staff (close a counter)</Button>
+              </div>
+              {sim && (
+                <p className="mt-3 text-sm">
+                  Avg wait {sim.current_avg_wait_min}m → <strong>{sim.projected_avg_wait_min}m</strong>{' '}
+                  <span className={Number(sim.delta_pct) <= 0 ? 'text-status-calm' : 'text-status-delayed'}>
+                    ({Number(sim.delta_pct) > 0 ? '+' : ''}{sim.delta_pct}%)
+                  </span>{' '}
+                  <span className="text-neutral-400">· {sim.servers}→{sim.new_servers} staff, {sim.waiting} waiting</span>
+                </p>
+              )}
             </Card>
 
             {/* Grounded Flow Intelligence (mock generation, real numbers) */}

@@ -30,7 +30,7 @@
 | 14 | QA & Testing | `14-TEST-PLAN.md` ✅ + **12 automated tests** (state machine · grounded assistant · notifications) + SQL smoke + RLS checks + pilot UAT script | Approval |
 | 15 | DevOps & Deployment | `15-DEVOPS.md` ✅ (Vercel + worker host + Supabase prod; go-live + security checklists) | Approval |
 | 16 | Industry Expansion | `16-INDUSTRY-EXPANSION.md` ✅ + **Flow Builder template library** (hospital · bank · passport · university) | Approval |
-| 16.5 | **Flow Intelligence v2** (post-pilot, data-driven) | Capacity AI (F2) · Predictive Ops (F13) · Simulation (F5) · Org Memory (F14) · auto queue-balancing | Approval |
+| 16.5 | **Flow Intelligence v2** | ✅ heuristic Predictive Ops (F13) + Capacity rec (F2) + Simulation (F5) on Manager dashboard; Org Memory (F14) scaffolded (needs pilot data) | Approval |
 | 17 | **Commercialization** | `17-COMMERCIALIZATION.md` (sales · success · marketing · partnerships · analytics) | Approval |
 
 **Rule:** Stop after every phase. Wait for explicit approval before starting the next.
