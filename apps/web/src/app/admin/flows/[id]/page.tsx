@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
-import { Button, Card, Field } from '@/lib/ui';
+import { Button, Card } from '@/lib/ui';
+import { FLOW_TEMPLATES, TEMPLATE_LABELS, type TemplateStage } from '@/lib/flow-templates';
 
 type Row = Record<string, any>;
 interface Stage {
@@ -50,6 +51,12 @@ export default function FlowBuilder() {
   }, [id]);
   useEffect(() => { load(); }, [load]);
 
+  const applyTemplate = (tpl: TemplateStage[]) =>
+    setStages(tpl.map((t) => ({
+      name: t.name, department_id: '', service_id: '',
+      est_duration_seconds: t.minutes * 60, requires_triage: false, is_optional: false,
+    })));
+
   const update = (i: number, patch: Partial<Stage>) =>
     setStages((s) => s.map((st, idx) => (idx === i ? { ...st, ...patch } : st)));
   const remove = (i: number) => setStages((s) => s.filter((_, idx) => idx !== i));
@@ -75,8 +82,24 @@ export default function FlowBuilder() {
       <button className="text-xs text-neutral-500 underline" onClick={() => router.push('/admin/flows')}>← Flows</button>
       <h1 className="text-2xl font-semibold">{flow.name}</h1>
 
-      <Card title="Stages (the patient journey)">
-        {stages.length === 0 && <p className="mb-3 text-sm text-neutral-400">No stages yet. Add the first.</p>}
+      <Card title="Stages (the customer journey)">
+        <div className="mb-4 flex items-center gap-2 text-sm">
+          <span className="text-neutral-500">Start from a template:</span>
+          <select
+            defaultValue=""
+            onChange={(e) => {
+              const key = e.target.value as keyof typeof FLOW_TEMPLATES;
+              if (key) applyTemplate(FLOW_TEMPLATES[key]);
+              e.target.value = '';
+            }}
+            className="rounded-control border border-neutral-300 px-2 py-1"
+          >
+            <option value="">Choose industry…</option>
+            {Object.entries(TEMPLATE_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+          </select>
+          <span className="text-xs text-neutral-400">then map each stage to a department</span>
+        </div>
+        {stages.length === 0 && <p className="mb-3 text-sm text-neutral-400">No stages yet. Add one, or start from a template.</p>}
         <ol className="space-y-3">
           {stages.map((s, i) => (
             <li key={i} className="rounded-control border border-neutral-200 p-3">

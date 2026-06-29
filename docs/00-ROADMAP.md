@@ -29,7 +29,7 @@
 | **13.5** | **Pilot Validation** ⭐ (one real hospital, 2–4 weeks) | `13b-PILOT-VALIDATION.md` | **Approval** |
 | 14 | QA & Testing | `14-TEST-PLAN.md` ✅ + **12 automated tests** (state machine · grounded assistant · notifications) + SQL smoke + RLS checks + pilot UAT script | Approval |
 | 15 | DevOps & Deployment | `15-DEVOPS.md` ✅ (Vercel + worker host + Supabase prod; go-live + security checklists) | Approval |
-| 16 | Industry Expansion | templates | Approval |
+| 16 | Industry Expansion | `16-INDUSTRY-EXPANSION.md` ✅ + **Flow Builder template library** (hospital · bank · passport · university) | Approval |
 | 16.5 | **Flow Intelligence v2** (post-pilot, data-driven) | Capacity AI (F2) · Predictive Ops (F13) · Simulation (F5) · Org Memory (F14) · auto queue-balancing | Approval |
 | 17 | **Commercialization** | `17-COMMERCIALIZATION.md` (sales · success · marketing · partnerships · analytics) | Approval |
 
