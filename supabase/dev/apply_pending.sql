@@ -111,22 +111,24 @@ insert into app.crypto_key (id, key) values (1, gen_random_bytes(32)) on conflic
 revoke all on app.crypto_key from public;
 
 -- ── Crypto helpers (definer; key never leaves these functions) ─────────────────
+-- NOTE: pgcrypto lives in the `extensions` schema on Supabase (in `public` on a bare
+-- Postgres). Include both in search_path so pgp_sym_*/hmac resolve in either env.
 create or replace function app.enc(p text) returns bytea
-  language sql security definer set search_path = app, public as
+  language sql security definer set search_path = app, public, extensions as
 $$ select pgp_sym_encrypt(p, encode((select key from app.crypto_key where id=1),'hex')) $$;
 
 create or replace function app.dec(p bytea) returns text
-  language sql security definer set search_path = app, public as
+  language sql security definer set search_path = app, public, extensions as
 $$ select case when p is null then null
               else pgp_sym_decrypt(p, encode((select key from app.crypto_key where id=1),'hex')) end $$;
 
 create or replace function app.bidx(p text) returns text
-  language sql security definer set search_path = app, public as
+  language sql security definer set search_path = app, public, extensions as
 $$ select encode(hmac(p, encode((select key from app.crypto_key where id=1),'hex'), 'sha256'),'hex') $$;
 
 -- masked display for staff (last 4 only) — the only crypto helper app roles may call
 create or replace function app.phone_last4(p bytea) returns text
-  language sql security definer set search_path = app, public as
+  language sql security definer set search_path = app, public, extensions as
 $$ select case when p is null then null else '••••' || right(app.dec(p), 4) end $$;
 
 -- 0020 default-grants new app functions to anon/authenticated; lock the sensitive ones back down
@@ -604,8 +606,10 @@ grant execute on function public.get_sms_target(uuid) to service_role;
 -- The client sends its coordinates; the geofence check + decision happen server-side
 -- (branch coords never leave the DB). Activates the pre-queue stage only if within radius.
 
+-- NOTE: PostGIS (st_distance/st_makepoint) lives in the `extensions` schema on Supabase;
+-- include it in search_path so the spatial functions resolve there and on bare Postgres.
 create or replace function public.activate_visit_gps(p_visit_id uuid, p_lat double precision, p_lng double precision)
-returns jsonb language plpgsql security definer set search_path = public, app as $$
+returns jsonb language plpgsql security definer set search_path = public, app, extensions as $$
 declare v_branch uuid; v_radius int; v_dist double precision; v_has_geo boolean;
 begin
   select v.branch_id, b.geofence_radius_m, b.geo is not null

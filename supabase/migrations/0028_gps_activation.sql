@@ -2,8 +2,10 @@
 -- The client sends its coordinates; the geofence check + decision happen server-side
 -- (branch coords never leave the DB). Activates the pre-queue stage only if within radius.
 
+-- NOTE: PostGIS (st_distance/st_makepoint) lives in the `extensions` schema on Supabase;
+-- include it in search_path so the spatial functions resolve there and on bare Postgres.
 create or replace function public.activate_visit_gps(p_visit_id uuid, p_lat double precision, p_lng double precision)
-returns jsonb language plpgsql security definer set search_path = public, app as $$
+returns jsonb language plpgsql security definer set search_path = public, app, extensions as $$
 declare v_branch uuid; v_radius int; v_dist double precision; v_has_geo boolean;
 begin
   select v.branch_id, b.geofence_radius_m, b.geo is not null

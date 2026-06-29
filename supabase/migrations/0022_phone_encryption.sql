@@ -9,22 +9,24 @@ insert into app.crypto_key (id, key) values (1, gen_random_bytes(32)) on conflic
 revoke all on app.crypto_key from public;
 
 -- ── Crypto helpers (definer; key never leaves these functions) ─────────────────
+-- NOTE: pgcrypto lives in the `extensions` schema on Supabase (in `public` on a bare
+-- Postgres). Include both in search_path so pgp_sym_*/hmac resolve in either env.
 create or replace function app.enc(p text) returns bytea
-  language sql security definer set search_path = app, public as
+  language sql security definer set search_path = app, public, extensions as
 $$ select pgp_sym_encrypt(p, encode((select key from app.crypto_key where id=1),'hex')) $$;
 
 create or replace function app.dec(p bytea) returns text
-  language sql security definer set search_path = app, public as
+  language sql security definer set search_path = app, public, extensions as
 $$ select case when p is null then null
               else pgp_sym_decrypt(p, encode((select key from app.crypto_key where id=1),'hex')) end $$;
 
 create or replace function app.bidx(p text) returns text
-  language sql security definer set search_path = app, public as
+  language sql security definer set search_path = app, public, extensions as
 $$ select encode(hmac(p, encode((select key from app.crypto_key where id=1),'hex'), 'sha256'),'hex') $$;
 
 -- masked display for staff (last 4 only) — the only crypto helper app roles may call
 create or replace function app.phone_last4(p bytea) returns text
-  language sql security definer set search_path = app, public as
+  language sql security definer set search_path = app, public, extensions as
 $$ select case when p is null then null else '••••' || right(app.dec(p), 4) end $$;
 
 -- 0020 default-grants new app functions to anon/authenticated; lock the sensitive ones back down
