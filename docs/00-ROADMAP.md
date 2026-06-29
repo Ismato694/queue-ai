@@ -26,7 +26,7 @@
 | 11 | Customer Flow OS Build — Real-time & Queue Engine | code — **S2 ✅** (queue-engine RPCs, Reception board) · **S3 ✅** (Supabase Realtime, customer QR/web join + Live Visit/Journey Timeline + activation, queued notifications + worker dispatcher) | Approval |
 | 12 | Customer Flow OS Build — Dashboards & Customer App | code — **S4 ✅** (Trust Engine ETA+confidence+reasons, Staff app, Public display, no-show grace sweep) | Approval |
 | 13 | Customer Flow OS Build — **Flow Intelligence v1** | code — **S5 ✅** (Manager dashboard: Flow Score + Digital Twin + Hours Returned + grounded assistant, Claude swap-in ready) · **S6 ✅** (offline cache R5, a11y, PWA manifest, indexes, state-machine tests). **Build feature-complete (S0–S6)** | Approval |
-| **13.5** | **Pilot Validation** ⭐ (one real hospital, 2–4 weeks) | `13b-PILOT-VALIDATION.md` | **Approval** |
+| **13.5** | **Pilot Validation** ⭐ (one real hospital, 2–4 weeks) | `13b-PILOT-VALIDATION.md` + `13c-PILOT-TOOLKIT.md` ✅ (scripts, scorecard, pilot report) — **run by team in hospital** | **Approval** |
 | 14 | QA & Testing | `14-TEST-PLAN.md` ✅ + **12 automated tests** (state machine · grounded assistant · notifications) + SQL smoke + RLS checks + pilot UAT script | Approval |
 | 15 | DevOps & Deployment | `15-DEVOPS.md` ✅ (Vercel + worker host + Supabase prod; go-live + security checklists) | Approval |
 | 16 | Industry Expansion | `16-INDUSTRY-EXPANSION.md` ✅ + **Flow Builder template library** (hospital · bank · passport · university) | Approval |
