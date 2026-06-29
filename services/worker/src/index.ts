@@ -3,6 +3,7 @@
 // service-role key (bypasses RLS by design). Real ETA/no-show jobs land in S4.
 import { createServer } from 'node:http';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { messageFor } from './messages.ts';
 
 const PORT = Number(process.env.WORKER_PORT ?? 4000);
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
@@ -37,14 +38,6 @@ async function send(n: Record<string, any>): Promise<boolean> {
   }
   console.log(`[notify] (simulated) ${n.channel}:${n.event_type} -> "${text}" (${n.id})`);
   return true; // simulated success in dev
-}
-
-function messageFor(event: string): string {
-  switch (event) {
-    case 'your_turn': return "It's almost your turn — please proceed to the counter.";
-    case 'delayed':   return 'Your wait has increased slightly. Thanks for your patience.';
-    default:          return 'Update on your visit.';
-  }
 }
 
 // ── No-show grace sweep (R4): called stages past their grace_deadline → no_show ──

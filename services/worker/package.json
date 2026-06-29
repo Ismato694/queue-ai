@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --watch --experimental-strip-types src/index.ts",
     "start": "node --experimental-strip-types src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --experimental-strip-types src/messages.test.ts"
   },
   "dependencies": {
     "@queue-ai/shared": "*",

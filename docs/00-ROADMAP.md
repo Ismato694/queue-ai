@@ -27,7 +27,7 @@
 | 12 | Customer Flow OS Build — Dashboards & Customer App | code — **S4 ✅** (Trust Engine ETA+confidence+reasons, Staff app, Public display, no-show grace sweep) | Approval |
 | 13 | Customer Flow OS Build — **Flow Intelligence v1** | code — **S5 ✅** (Manager dashboard: Flow Score + Digital Twin + Hours Returned + grounded assistant, Claude swap-in ready) · **S6 ✅** (offline cache R5, a11y, PWA manifest, indexes, state-machine tests). **Build feature-complete (S0–S6)** | Approval |
 | **13.5** | **Pilot Validation** ⭐ (one real hospital, 2–4 weeks) | `13b-PILOT-VALIDATION.md` | **Approval** |
-| 14 | QA & Testing | `14-TEST-PLAN.md` + tests | Approval |
+| 14 | QA & Testing | `14-TEST-PLAN.md` ✅ + **12 automated tests** (state machine · grounded assistant · notifications) + SQL smoke + RLS checks + pilot UAT script | Approval |
 | 15 | DevOps & Deployment | `15-DEVOPS.md` ✅ (Vercel + worker host + Supabase prod; go-live + security checklists) | Approval |
 | 16 | Industry Expansion | templates | Approval |
 | 16.5 | **Flow Intelligence v2** (post-pilot, data-driven) | Capacity AI (F2) · Predictive Ops (F13) · Simulation (F5) · Org Memory (F14) · auto queue-balancing | Approval |
