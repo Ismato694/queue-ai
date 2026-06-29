@@ -39,6 +39,22 @@ body { @apply bg-canvas text-ink; }
 *::-webkit-scrollbar { width: 8px; height: 8px; }
 *::-webkit-scrollbar-thumb { background: rgb(var(--line)); border-radius: 999px; }
 
+/* native <select> styled to match the theme (was rendering OS-default / whitish) */
+@layer base {
+  select {
+    @apply appearance-none bg-surface text-ink border border-line rounded-control;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 1rem;
+    padding-right: 2rem;
+    cursor: pointer;
+  }
+  select:focus-visible { @apply border-accent; }
+  /* option list colors (dark-mode aware where the browser honors it) */
+  option { background-color: rgb(var(--surface)); color: rgb(var(--ink)); }
+}
+
 /* skeleton shimmer for loading states */
 .skeleton { position: relative; overflow: hidden; background: rgb(var(--surface2)); }
 .skeleton::after { content: ''; position: absolute; inset: 0;
