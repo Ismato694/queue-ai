@@ -24,6 +24,7 @@ export default function ManagerPage() {
   const [a, setA] = useState<AssistantResult | null>(null);
   const [ops, setOps] = useState<Row[]>([]);
   const [sim, setSim] = useState<Row | null>(null);
+  const [accV, setAcc] = useState<{ scored: number; within_band: number; accuracy: number | null } | null>(null);
 
   useEffect(() => {
     if (!organizationId) return;
@@ -35,14 +36,16 @@ export default function ManagerPage() {
   const load = useCallback(async () => {
     if (!branchId) return;
     const sb = getSupabase();
-    const [ov, hours, pops] = await Promise.all([
+    const [ov, hours, pops, acc] = await Promise.all([
       sb.rpc('get_flow_overview', { p_branch_id: branchId }),
       sb.rpc('get_hours_returned', { p_branch_id: branchId }),
       sb.rpc('get_predictive_ops', { p_branch_id: branchId }),
+      sb.rpc('prediction_accuracy', { p_branch_id: branchId }),
     ]);
     if (ov.data) setO(ov.data as Overview);
     if (hours.data) setHr(hours.data as typeof hr);
     setOps((pops.data as Row[]) ?? []);
+    setAcc(acc.data as typeof accV);
   }, [branchId]);
 
   const runSim = async (add: number, remove: number) => {
@@ -103,6 +106,9 @@ export default function ManagerPage() {
               <Metric label="No-show" value={`${Math.round(o.no_show_rate * 100)}%`} />
               <Metric label="Served today" value={`${o.served_today}`} />
               <Metric label="⏱ Time saved today" value={`${Math.round(o.time_saved_seconds / 3600)}h`} highlight />
+              {accV?.accuracy != null && (
+                <Metric label="ETA accuracy" value={`${Math.round(accV.accuracy * 100)}%`} />
+              )}
             </div>
 
             {/* Digital Twin board (F3-lite) */}

@@ -15,6 +15,7 @@ export default function VisitPage() {
   const id = String(useParams().id);
   const [s, setS] = useState<Status | null>(null);
   const [acting, setActing] = useState(false);
+  const [gpsMsg, setGpsMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!supabaseConfigured) return;
@@ -35,6 +36,26 @@ export default function VisitPage() {
     setActing(true);
     try { await getSupabase().rpc('activate_visit', { p_visit_id: id, p_trigger: 'on_my_way' }); await load(); }
     finally { setActing(false); }
+  }
+
+  function checkInGps() {
+    if (!('geolocation' in navigator)) { setGpsMsg('Location not available on this device.'); return; }
+    setActing(true); setGpsMsg('Checking your location…');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { data } = await getSupabase().rpc('activate_visit_gps', {
+            p_visit_id: id, p_lat: pos.coords.latitude, p_lng: pos.coords.longitude,
+          });
+          const r = data as { ok: boolean; reason?: string; distance_m?: number } | null;
+          if (r?.ok) { setGpsMsg('Checked in — you\'re in the queue.'); await load(); }
+          else if (r?.reason === 'too_far') setGpsMsg(`You're ${r.distance_m}m away — get closer to check in automatically.`);
+          else setGpsMsg('This branch has no geofence set; use "I\'m on my way".');
+        } finally { setActing(false); }
+      },
+      () => { setGpsMsg('Couldn\'t read your location. Use "I\'m on my way" instead.'); setActing(false); },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   }
 
   return (
@@ -75,10 +96,17 @@ export default function VisitPage() {
       )}
 
       {isPreQueue && !done && (
-        <button onClick={activate} disabled={acting}
-          className="mt-5 w-full rounded-control bg-accent px-4 py-3 font-medium text-white">
-          {acting ? '…' : "I'm on my way"}
-        </button>
+        <div className="mt-5 space-y-2">
+          <button onClick={activate} disabled={acting}
+            className="w-full rounded-control bg-accent px-4 py-3 font-medium text-white">
+            {acting ? '…' : "I'm on my way"}
+          </button>
+          <button onClick={checkInGps} disabled={acting}
+            className="w-full rounded-control border border-line px-4 py-3 text-sm font-medium text-muted">
+            📍 Check in with my location
+          </button>
+          {gpsMsg && <p className="text-center text-xs text-muted">{gpsMsg}</p>}
+        </div>
       )}
 
       <div className="mt-8">

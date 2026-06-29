@@ -82,6 +82,12 @@ export default function StaffPage() {
                     {current.state === 'called' && <Button onClick={() => rpc('serve_stage', { p_stage_id: current.stage_id })}>Start</Button>}
                     <Button onClick={() => rpc('complete_stage', { p_stage_id: current.stage_id })}>✔ Complete → next</Button>
                   </div>
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted">
+                    <button className="underline" onClick={() => rpc('transfer_stage', { p_stage_id: current.stage_id })}>Transfer →</button>
+                    <button className="underline" onClick={() => rpc('delay_stage', { p_stage_id: current.stage_id })}>Delay</button>
+                    {current.state === 'called' && <button className="underline" onClick={() => rpc('requeue_stage', { p_stage_id: current.stage_id })}>Requeue (here, late)</button>}
+                    <button className="underline" onClick={() => rpc('skip_stage', { p_stage_id: current.stage_id })}>Skip</button>
+                  </div>
                 </>
               ) : (
                 <>

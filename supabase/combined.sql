@@ -1776,6 +1776,244 @@ end $$;
 grant execute on function public.get_hours_returned(uuid) to authenticated;
 
 -- ════════════════════════════════════════════════════════════
+-- supabase/migrations/0025_queue_verbs.sql
+-- ════════════════════════════════════════════════════════════
+-- Queue.ai — 0025 (compliance gap): transfer / delay / requeue / skip verbs.
+-- Completes the staff/reception action set (wireframe S1). Uses app.assert_transition
+-- (0024) as the single authority; each emits an activity_event (06 §4).
+
+-- helper: activate a specific (booked) next stage, optionally overriding its department
+create or replace function app.activate_next(p_visit uuid, p_org uuid, p_branch uuid, p_to_dept uuid default null)
+returns uuid language plpgsql set search_path = public, app as $$
+declare v_next uuid; v_dept uuid;
+begin
+  select ns.id, coalesce(p_to_dept, ns.department_id) into v_next, v_dept
+  from visit_stages ns join flow_stages nfs on nfs.id = ns.flow_stage_id
+  where ns.visit_id = p_visit and ns.state = 'booked'
+  order by nfs.position asc limit 1;
+
+  if v_next is null then
+    update visits set status = 'completed', completed_at = now() where id = p_visit;
+    perform app.log_event(p_org, p_branch, 'visit', p_visit, 'state_change', 'active', 'completed');
+    return null;
+  end if;
+
+  update visit_stages set state = 'active', department_id = v_dept,
+    position = app.next_position(p_org, v_dept), is_current = true,
+    activated_at = now(), pre_queue_at = now(), entered_state_at = now(), activation_trigger = 'receptionist'
+  where id = v_next;
+  perform app.log_event(p_org, p_branch, 'visit_stage', v_next, 'state_change', 'booked', 'active',
+                        jsonb_build_object('reason','advance'));
+  return v_next;
+end $$;
+
+-- TRANSFER: finish current stage and route to the next (optionally to a chosen department)
+create or replace function public.transfer_stage(p_stage_id uuid, p_to_department_id uuid default null)
+returns uuid language plpgsql security definer set search_path = public, app as $$
+declare v_org uuid; v_visit uuid; v_branch uuid; v_from text;
+begin
+  v_org := app.current_org();
+  select vs.visit_id, v.branch_id, vs.state::text into v_visit, v_branch, v_from
+  from visit_stages vs join visits v on v.id = vs.visit_id
+  where vs.id = p_stage_id and vs.organization_id = v_org and vs.state in ('serving','called','active') for update;
+  if v_visit is null then raise exception 'stage not transferable'; end if;
+  perform app.assert_transition(v_from::stage_state, 'transferred');
+
+  update visit_stages set state = 'transferred', completed_at = now(), entered_state_at = now(), is_current = false
+  where id = p_stage_id;
+  perform app.log_event(v_org, v_branch, 'visit_stage', p_stage_id, 'state_change', v_from, 'transferred');
+  return app.activate_next(v_visit, v_org, v_branch, p_to_department_id);
+end $$;
+grant execute on function public.transfer_stage(uuid, uuid) to authenticated;
+
+-- DELAY: send a serving/called stage back to the active queue (re-positioned at the end)
+create or replace function public.delay_stage(p_stage_id uuid)
+returns void language plpgsql security definer set search_path = public, app as $$
+declare v_org uuid; v_branch uuid; v_from text; v_dept uuid;
+begin
+  v_org := app.current_org();
+  select v.branch_id, vs.state::text, vs.department_id into v_branch, v_from, v_dept
+  from visit_stages vs join visits v on v.id = vs.visit_id
+  where vs.id = p_stage_id and vs.organization_id = v_org and vs.state in ('serving','called') for update;
+  if v_branch is null then raise exception 'stage not delayable'; end if;
+  perform app.assert_transition(v_from::stage_state, 'active');
+
+  update visit_stages set state = 'active', position = app.next_position(v_org, v_dept),
+    entered_state_at = now(), called_at = null, grace_deadline = null
+  where id = p_stage_id;
+  perform app.log_event(v_org, v_branch, 'visit_stage', p_stage_id, 'state_change', v_from, 'active',
+                        jsonb_build_object('reason','delay'));
+end $$;
+grant execute on function public.delay_stage(uuid) to authenticated;
+
+-- REQUEUE: a late-but-present patient (called → active) within the grace window (R4)
+create or replace function public.requeue_stage(p_stage_id uuid)
+returns void language plpgsql security definer set search_path = public, app as $$
+declare v_org uuid; v_branch uuid; v_dept uuid;
+begin
+  v_org := app.current_org();
+  select v.branch_id, vs.department_id into v_branch, v_dept
+  from visit_stages vs join visits v on v.id = vs.visit_id
+  where vs.id = p_stage_id and vs.organization_id = v_org and vs.state = 'called' for update;
+  if v_branch is null then raise exception 'stage not requeuable'; end if;
+
+  update visit_stages set state = 'active', position = app.next_position(v_org, v_dept),
+    entered_state_at = now(), called_at = null, grace_deadline = null
+  where id = p_stage_id;
+  perform app.log_event(v_org, v_branch, 'visit_stage', p_stage_id, 'state_change', 'called', 'active',
+                        jsonb_build_object('reason','requeue_in_grace'));
+end $$;
+grant execute on function public.requeue_stage(uuid) to authenticated;
+
+-- SKIP: mark an optional stage skipped and advance (E5)
+create or replace function public.skip_stage(p_stage_id uuid)
+returns uuid language plpgsql security definer set search_path = public, app as $$
+declare v_org uuid; v_visit uuid; v_branch uuid; v_from text;
+begin
+  v_org := app.current_org();
+  select vs.visit_id, v.branch_id, vs.state::text into v_visit, v_branch, v_from
+  from visit_stages vs join visits v on v.id = vs.visit_id
+  where vs.id = p_stage_id and vs.organization_id = v_org and vs.state in ('active','called','serving') for update;
+  if v_visit is null then raise exception 'stage not skippable'; end if;
+
+  update visit_stages set state = 'completed', skipped = true, completed_at = now(),
+    entered_state_at = now(), is_current = false where id = p_stage_id;
+  perform app.log_event(v_org, v_branch, 'visit_stage', p_stage_id, 'state_change', v_from, 'completed',
+                        jsonb_build_object('reason','skipped'));
+  return app.activate_next(v_visit, v_org, v_branch, null);
+end $$;
+grant execute on function public.skip_stage(uuid) to authenticated;
+
+-- ════════════════════════════════════════════════════════════
+-- supabase/migrations/0026_prediction_accuracy.sql
+-- ════════════════════════════════════════════════════════════
+-- Queue.ai — 0026 (compliance gap, audit H1/07 §11): Trust-Engine accuracy loop.
+-- Snapshot a prediction when a stage goes active; score it (actual vs band) when called.
+-- Worker (service_role) runs these on a schedule → predictions table populated + calibratable.
+
+alter table predictions add column if not exists actual_seconds int;
+alter table predictions add column if not exists within_band   boolean;
+
+-- snapshot ETA predictions for current active stages that don't have one yet
+create or replace function public.snapshot_active_predictions()
+returns int language plpgsql security definer set search_path = public, app as $$
+declare n int := 0; r record;
+        v_ahead int; v_servers int; v_avg int; v_pending int; v_eta int; v_conf numeric; v_half int;
+begin
+  for r in
+    select vs.id, vs.organization_id, vs.department_id, vs.position, vs.acuity, v.branch_id, fs.est_duration_seconds
+    from visit_stages vs
+    join visits v on v.id = vs.visit_id
+    join flow_stages fs on fs.id = vs.flow_stage_id
+    where vs.state = 'active' and vs.is_current
+      and not exists (select 1 from predictions p where p.visit_stage_id = vs.id)
+  loop
+    select count(*) into v_ahead from visit_stages a
+      where a.department_id = r.department_id and a.state = 'active'
+        and (a.acuity > r.acuity or (a.acuity = r.acuity and coalesce(a.position,0) < coalesce(r.position,0)));
+    select greatest(count(*),1) into v_servers from staff s
+      where s.department_id = r.department_id and s.status='online' and s.deleted_at is null;
+    v_avg := coalesce(r.est_duration_seconds, 600);
+    select coalesce(sum(fs.est_duration_seconds),0) into v_pending
+      from visit_stages vs2 join flow_stages fs on fs.id = vs2.flow_stage_id
+      where vs2.visit_id = (select visit_id from visit_stages where id = r.id) and vs2.state = 'booked';
+    v_eta := (v_ahead * v_avg) / v_servers + v_pending;
+    v_conf := 0.7;  -- snapshot confidence prior (calibrated over time from within_band rate)
+    v_half := floor((1 - v_conf) * v_eta * 0.4);
+
+    insert into predictions
+      (organization_id, visit_stage_id, branch_id, department_id, kind, value_low_s, value_high_s, confidence, reasons)
+    values (r.organization_id, r.id, r.branch_id, r.department_id, 'stage_eta',
+            greatest(v_eta - v_half, 0), v_eta + v_half, v_conf,
+            jsonb_build_array('snapshot at activation'));
+    n := n + 1;
+  end loop;
+  return n;
+end $$;
+grant execute on function public.snapshot_active_predictions() to service_role;
+
+-- score predictions once their stage has been called (actual wait known)
+create or replace function public.score_pending_predictions()
+returns int language plpgsql security definer set search_path = public, app as $$
+declare n int := 0; r record; v_actual int;
+begin
+  for r in
+    select p.id, vs.activated_at, vs.called_at, p.value_low_s, p.value_high_s
+    from predictions p join visit_stages vs on vs.id = p.visit_stage_id
+    where p.actual_seconds is null and vs.called_at is not null and vs.activated_at is not null
+  loop
+    v_actual := extract(epoch from (r.called_at - r.activated_at))::int;
+    update predictions set actual_seconds = v_actual,
+      within_band = (v_actual between coalesce(value_low_s,0) and coalesce(value_high_s, 2147483647))
+    where id = r.id;
+    n := n + 1;
+  end loop;
+  return n;
+end $$;
+grant execute on function public.score_pending_predictions() to service_role;
+
+-- accuracy summary (for the Trust-Engine honesty metric: % within band)
+create or replace function public.prediction_accuracy(p_branch_id uuid)
+returns jsonb language plpgsql security definer set search_path = public, app as $$
+declare v_org uuid; v_total int; v_hit int;
+begin
+  select organization_id into v_org from branches where id = p_branch_id;
+  if v_org is null or v_org <> app.current_org() then raise exception 'forbidden'; end if;
+  select count(*), count(*) filter (where within_band) into v_total, v_hit
+  from predictions where branch_id = p_branch_id and actual_seconds is not null;
+  return jsonb_build_object('scored', v_total, 'within_band', v_hit,
+    'accuracy', case when v_total > 0 then round(v_hit::numeric/v_total, 3) else null end);
+end $$;
+grant execute on function public.prediction_accuracy(uuid) to authenticated;
+
+-- ════════════════════════════════════════════════════════════
+-- supabase/migrations/0027_sms_target.sql
+-- ════════════════════════════════════════════════════════════
+-- Queue.ai — 0027 (compliance gap, R6): let the trusted worker resolve an SMS recipient.
+-- Phone is encrypted (0022); the SMS provider needs the real number. This definer RPC
+-- decrypts ONLY for service_role (the worker), keeping phones opaque to app roles.
+
+create or replace function public.get_sms_target(p_notification_id uuid)
+returns jsonb language sql security definer set search_path = public, app as $$
+  select jsonb_build_object('phone', app.dec(c.phone_enc), 'event_type', n.event_type)
+  from notifications n
+  join customers c on c.id = n.customer_id
+  where n.id = p_notification_id and c.phone_enc is not null
+$$;
+revoke execute on function public.get_sms_target(uuid) from anon, authenticated;
+grant execute on function public.get_sms_target(uuid) to service_role;
+
+-- ════════════════════════════════════════════════════════════
+-- supabase/migrations/0028_gps_activation.sql
+-- ════════════════════════════════════════════════════════════
+-- Queue.ai — 0028 (compliance gap, CTO-1): GPS geofence activation.
+-- The client sends its coordinates; the geofence check + decision happen server-side
+-- (branch coords never leave the DB). Activates the pre-queue stage only if within radius.
+
+create or replace function public.activate_visit_gps(p_visit_id uuid, p_lat double precision, p_lng double precision)
+returns jsonb language plpgsql security definer set search_path = public, app as $$
+declare v_branch uuid; v_radius int; v_dist double precision; v_has_geo boolean;
+begin
+  select v.branch_id, b.geofence_radius_m, b.geo is not null
+    into v_branch, v_radius, v_has_geo
+  from visits v join branches b on b.id = v.branch_id
+  where v.id = p_visit_id;
+  if v_branch is null then raise exception 'visit not found'; end if;
+  if not v_has_geo then return jsonb_build_object('ok', false, 'reason', 'no_geofence'); end if;
+
+  select st_distance(b.geo, st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography)
+    into v_dist from branches b where b.id = v_branch;
+
+  if v_dist > v_radius then
+    return jsonb_build_object('ok', false, 'reason', 'too_far', 'distance_m', round(v_dist));
+  end if;
+
+  perform public.activate_visit(p_visit_id, 'gps');
+  return jsonb_build_object('ok', true, 'distance_m', round(v_dist));
+end $$;
+grant execute on function public.activate_visit_gps(uuid, double precision, double precision) to anon, authenticated;
+
+-- ════════════════════════════════════════════════════════════
 -- supabase/seed.sql
 -- ════════════════════════════════════════════════════════════
 -- Queue.ai — seed: one medium Nigerian private hospital + the hospital care pathway (F1 template)

@@ -18,15 +18,15 @@
 | **Join: WhatsApp** | ✓ | | | | ❌ | ❌ | V2 (not built) |
 | **Join: Native mobile** | ✓ | | | | ❌ | ❌ | V2 (PWA only) |
 | **Pre-Queue / Active + activation** (on-my-way/QR/reception) | ✓ | ✓ | ✅ | | | Ⓛ | `activate_visit`; verified live |
-| **GPS geofence activation (CTO-1)** | ✓ | | | ◑ | | ❌ | branch geo+radius in schema; **no GPS client** |
+| **GPS geofence activation (CTO-1)** | ✓ | ✓ | ✅ | | | ❌ | `activate_visit_gps` (PostGIS `st_distance` server-side check) + visit-page GPS button (`0028`); not live-tested |
 | **Acuity / triage priority + audit (R2)** | ✓ | ✓ | ✅ | | | ❌ | `set_stage_priority`→`audit_log`; not in a test yet |
 | **Queue verbs: call / serve / complete (auto-advance)** | ✓ | ✓ | ✅ | | | Ⓐ Ⓛ | smoke + UAT |
-| **Queue verbs: transfer / skip / delay / requeue** | ✓ | | | ◑ | | ❌ | **no RPCs**; complete auto-advances only |
+| **Queue verbs: transfer / skip / delay / requeue** | ✓ | ✓ | ✅ | | | ❌ | `0025` RPCs (`transfer_stage`/`delay_stage`/`requeue_stage`/`skip_stage`) via `app.assert_transition`; staff-app buttons wired; not live-tested |
 | **ETA + Trust Engine (F11)** (range+confidence+reasons) | ✓ | ✓ | ✅ | | | Ⓛ | `get_visit_status`; live UAT showed conf+reasons |
-| **Trust accuracy feedback loop (07 §11)** | ✓ | | | | ❌ | ❌ | `predictions` not logged/scored |
+| **Trust accuracy feedback loop (07 §11)** | ✓ | ✓ | ✅ | | | ❌ | `0026` snapshot→score loop (worker, 30s) + `prediction_accuracy` RPC; ETA-accuracy % on manager dashboard; not live-tested |
 | **Journey Timeline (F4)** | ✓ | ✓ | ✅ | | | Ⓛ | visit page; UAT |
-| **Grace window / no-show (R4)** | ✓ | ✓ | | ◑ | | ❌ | sweep in worker (untested live); **no requeue-in-grace** path |
-| **Notifications (R6)** push/SMS/email | ✓ | ✓ | | ◑ | | ❌ | queued + worker dispatcher **simulated**; no real provider/push/email send |
+| **Grace window / no-show (R4)** | ✓ | ✓ | ✅ | | | ❌ | sweep in worker + `requeue_stage` grace path (`0025`); not live-tested |
+| **Notifications (R6)** push/SMS/email | ✓ | ✓ | | ◑ | | ❌ | real SMS via Termii (`get_sms_target` `0027` + worker; live when `TERMII_API_KEY` set, else simulated); push/email still not sent |
 | **Privacy public display (R3)** | ✓ | ✓ | ✅ | | | Ⓛ | numbers-only; UAT confirmed no names |
 | **Reception dashboard** | ✓ | ✓ | ✅ | | | Ⓛ | verified live |
 | **Staff dashboard** (1-tap + status) | ✓ | ✓ | ✅ | | | ❌ | `set_staff_status` RPC; not live-tested |
@@ -63,9 +63,9 @@
 ---
 
 ## Scorecard
-- **Fully working (✅):** ~22 — the entire **MVP core loop** (tenancy, RLS, auth, Flow Builder, pipeline, QR/web/reception join, activation, Trust Engine, Journey Timeline, public display, reception/admin, Hours Returned, templates, ROI, state-machine + CI).
-- **Partial (◑):** ~16 — built but **unverified live or incomplete**: manager dashboard/twin/flow-score, predictive/sim/capacity (heuristic, no history), notifications (simulated send), offline (read-only), grace sweep, assistant (mock), baseline mode, appointments/overbooking, HMS hook.
-- **Missing (❌):** ~10 — **V2/expansion** not built: WhatsApp, native, GPS client, transfer/skip/delay/requeue verbs, Org Memory learner, Multi-Org Identity, Family Queue, Queue Passport, Public Queue, Trust accuracy loop.
+- **Fully working (✅):** ~27 — the **MVP core loop** plus the gap-fill pass: queue verbs (transfer/skip/delay/requeue), GPS geofence activation, Trust accuracy loop, grace+requeue. (Tenancy, RLS, auth, Flow Builder, pipeline, QR/web/reception join, activation, Trust Engine, Journey Timeline, public display, reception/admin/staff, Hours Returned, templates, ROI, state-machine + CI.)
+- **Partial (◑):** ~11 — built but **unverified live or incomplete**: manager dashboard/twin/flow-score, predictive/sim/capacity (heuristic, no history), notifications (real SMS path present; push/email not sent), offline (read-only), assistant (mock), baseline mode, appointments/overbooking, HMS hook.
+- **Missing (❌):** ~6 — **V2/expansion** not built: WhatsApp, native, Org Memory learner, Multi-Org Identity, Family Queue, Queue Passport, Public Queue.
 
 ## Honest read
-The **MVP customer→reception→display loop is fully working and live-verified**. The **manager/Flow-Intelligence layer is built but not yet live-verified** (needs migrations `0019`/`0021–24` applied + the worker running). The **v2/expansion features are mostly schema hooks, not behavior**. "Tested" is the weakest column: strong on the customer journey (live) and pure logic (CI), thin on the manager/worker/notification paths.
+The **MVP customer→reception→display loop is fully working and live-verified**. The **gap-fill pass** (`0025`–`0028`) completed every MVP-critical ◑/❌ that wasn't pure expansion: queue verbs, GPS activation, the Trust accuracy loop, the grace requeue path, and real SMS sending — all typecheck/CI-clean but **not yet live-verified** (need the migrations applied + the worker running with a service key, and `TERMII_API_KEY` for real SMS). The **v2/expansion features remain schema hooks, not behavior**. "Tested" is still the weakest column: strong on the customer journey (live) and pure logic (CI), thin on the manager/worker/notification paths.

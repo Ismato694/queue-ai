@@ -30,14 +30,27 @@ async function dispatchNotifications() {
 
 async function send(n: Record<string, any>): Promise<boolean> {
   const text = messageFor(n.event_type);
-  // Provider integration (Termii / Africa's Talking) plugs in here once keys exist.
-  if (process.env.TERMII_API_KEY || process.env.AFRICASTALKING_API_KEY) {
-    // TODO(S6): real SMS send via provider HTTP API; needs a recipient phone lookup.
-    console.log(`[notify] (provider) would send "${text}" for ${n.id}`);
-    return true;
+  const termiiKey = process.env.TERMII_API_KEY;
+  if (termiiKey && admin) {
+    // resolve the (encrypted) recipient via the service-role-only RPC, then send
+    const { data } = await admin.rpc('get_sms_target', { p_notification_id: n.id });
+    const phone = (data as { phone?: string } | null)?.phone;
+    if (!phone) { console.warn(`[notify] no phone for ${n.id}`); return false; }
+    try {
+      const res = await fetch('https://api.ng.termii.com/api/sms/send', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          to: phone, from: process.env.TERMII_SENDER_ID ?? 'Queue.ai',
+          sms: text, type: 'plain', channel: 'generic', api_key: termiiKey,
+        }),
+      });
+      if (!res.ok) { console.error(`[notify] Termii ${res.status}`); return false; }
+      return true;
+    } catch (e) { console.error('[notify] send error', e); return false; }
   }
   console.log(`[notify] (simulated) ${n.channel}:${n.event_type} -> "${text}" (${n.id})`);
-  return true; // simulated success in dev
+  return true; // simulated success in dev (no provider key)
 }
 
 // ── No-show grace sweep (R4): called stages past their grace_deadline → no_show ──
@@ -71,12 +84,20 @@ async function rollups() {
   await admin.rpc('rollup_daily_metrics');
 }
 
+// ── Trust-Engine accuracy loop (0026): snapshot ETAs, then score them vs actuals ──
+async function predictions() {
+  if (!admin) return;
+  await admin.rpc('snapshot_active_predictions');
+  await admin.rpc('score_pending_predictions');
+}
+
 server.listen(PORT, () => {
   console.log(`[worker] listening on :${PORT}${admin ? '' : ' (no Supabase creds — jobs idle)'}`);
   if (admin) {
     setInterval(() => { dispatchNotifications().catch((e) => console.error('[notify]', e)); }, 5000);
     setInterval(() => { sweepNoShows().catch((e) => console.error('[sweep]', e)); }, 15000);
     setInterval(() => { rollups().catch((e) => console.error('[rollup]', e)); }, 15 * 60 * 1000);
+    setInterval(() => { predictions().catch((e) => console.error('[predict]', e)); }, 30 * 1000);
     rollups().catch((e) => console.error('[rollup]', e)); // once on boot
   }
 });
