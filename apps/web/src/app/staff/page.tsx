@@ -40,7 +40,7 @@ export default function StaffPage() {
     return () => { clearInterval(poll); sb.removeChannel(ch); };
   }, [loadQueue]);
 
-  if (loading) return <main className="p-10 text-sm text-neutral-500">Loading…</main>;
+  if (loading) return <main className="p-10 text-sm text-muted">Loading…</main>;
   if (!userId) { router.push('/login'); return null; }
   if (!organizationId) { router.push('/onboarding'); return null; }
 
@@ -57,25 +57,25 @@ export default function StaffPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
+      <header className="flex items-center justify-between border-b border-line bg-surface px-6 py-3">
         <span className="text-sm font-semibold text-accent">Queue.ai · {me?.display_name ?? 'Staff'}</span>
         <div className="flex items-center gap-2">
-          <span className={`text-xs ${me?.status === 'online' ? 'text-status-calm' : 'text-neutral-400'}`}>● {me?.status ?? '—'}</span>
-          <button className="text-xs text-neutral-500 underline" onClick={async () => { await sb.auth.signOut(); router.push('/login'); }}>Sign out</button>
+          <span className={`text-xs ${me?.status === 'online' ? 'text-status-calm' : 'text-faint'}`}>● {me?.status ?? '—'}</span>
+          <button className="text-xs text-muted underline" onClick={async () => { await sb.auth.signOut(); router.push('/login'); }}>Sign out</button>
         </div>
       </header>
 
       <main className="mx-auto max-w-md px-6 py-8">
         {!me?.department_id ? (
-          <p className="text-sm text-neutral-500">Your account isn't linked to a department yet. Ask an admin to assign you in Structure.</p>
+          <p className="text-sm text-muted">Your account isn't linked to a department yet. Ask an admin to assign you in Structure.</p>
         ) : (
           <>
-            <div className="rounded-card border border-neutral-200 bg-white p-6">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Now</p>
+            <div className="rounded-card border border-line bg-surface p-6">
+              <p className="text-xs font-semibold uppercase tracking-wide text-faint">Now</p>
               {current ? (
                 <>
                   <p className="tnum mt-1 text-3xl font-semibold">{current.ticket_no}</p>
-                  <p className="text-neutral-600">{current.patient_name ?? '—'} · {current.state}</p>
+                  <p className="text-muted">{current.patient_name ?? '—'} · {current.state}</p>
                   <div className="mt-4 flex gap-2">
                     {current.state === 'called' && <Button onClick={() => rpc('serve_stage', { p_stage_id: current.stage_id })}>Start</Button>}
                     <Button onClick={() => rpc('complete_stage', { p_stage_id: current.stage_id })}>✔ Complete → next</Button>
@@ -83,7 +83,7 @@ export default function StaffPage() {
                 </>
               ) : (
                 <>
-                  <p className="mt-1 text-neutral-500">No one in service.</p>
+                  <p className="mt-1 text-muted">No one in service.</p>
                   <div className="mt-4">
                     <Button onClick={() => branchId && rpc('call_next', { p_branch_id: branchId, p_department_id: me.department_id })}
                       disabled={waitingCount === 0}>▶ Call next</Button>
@@ -92,11 +92,11 @@ export default function StaffPage() {
               )}
             </div>
 
-            <p className="mt-4 text-sm text-neutral-500">Up next: {waitingCount} waiting</p>
+            <p className="mt-4 text-sm text-muted">Up next: {waitingCount} waiting</p>
 
             <div className="mt-6 flex gap-2">
               {me?.status === 'online'
-                ? <button className="text-sm text-neutral-500 underline" onClick={() => setStatus('break')}>Take a break</button>
+                ? <button className="text-sm text-muted underline" onClick={() => setStatus('break')}>Take a break</button>
                 : <button className="text-sm text-status-calm underline" onClick={() => setStatus('online')}>Return online</button>}
             </div>
           </>

@@ -75,16 +75,16 @@ export default function FlowBuilder() {
     } finally { setBusy(false); }
   }
 
-  if (!flow) return <p className="text-sm text-neutral-500">Loading…</p>;
+  if (!flow) return <p className="text-sm text-muted">Loading…</p>;
 
   return (
     <div className="space-y-6">
-      <button className="text-xs text-neutral-500 underline" onClick={() => router.push('/admin/flows')}>← Flows</button>
+      <button className="text-xs text-muted underline" onClick={() => router.push('/admin/flows')}>← Flows</button>
       <h1 className="text-2xl font-semibold">{flow.name}</h1>
 
       <Card title="Stages (the customer journey)">
         <div className="mb-4 flex items-center gap-2 text-sm">
-          <span className="text-neutral-500">Start from a template:</span>
+          <span className="text-muted">Start from a template:</span>
           <select
             defaultValue=""
             onChange={(e) => {
@@ -92,24 +92,24 @@ export default function FlowBuilder() {
               if (key) applyTemplate(FLOW_TEMPLATES[key]);
               e.target.value = '';
             }}
-            className="rounded-control border border-neutral-300 px-2 py-1"
+            className="rounded-control border border-line px-2 py-1"
           >
             <option value="">Choose industry…</option>
             {Object.entries(TEMPLATE_LABELS).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select>
-          <span className="text-xs text-neutral-400">then map each stage to a department</span>
+          <span className="text-xs text-faint">then map each stage to a department</span>
         </div>
-        {stages.length === 0 && <p className="mb-3 text-sm text-neutral-400">No stages yet. Add one, or start from a template.</p>}
+        {stages.length === 0 && <p className="mb-3 text-sm text-faint">No stages yet. Add one, or start from a template.</p>}
         <ol className="space-y-3">
           {stages.map((s, i) => (
-            <li key={i} className="rounded-control border border-neutral-200 p-3">
+            <li key={i} className="rounded-control border border-line p-3">
               <div className="mb-2 flex items-center gap-2">
-                <span className="text-xs text-neutral-400">#{i + 1}</span>
-                <input className="flex-1 rounded-control border border-neutral-300 px-2 py-1 text-sm"
+                <span className="text-xs text-faint">#{i + 1}</span>
+                <input className="flex-1 rounded-control border border-line px-2 py-1 text-sm"
                   placeholder="Stage name (e.g. Consultation)" value={s.name}
                   onChange={(e) => update(i, { name: e.target.value })} />
-                <button className="text-xs text-neutral-400" onClick={() => move(i, -1)}>↑</button>
-                <button className="text-xs text-neutral-400" onClick={() => move(i, 1)}>↓</button>
+                <button className="text-xs text-faint" onClick={() => move(i, -1)}>↑</button>
+                <button className="text-xs text-faint" onClick={() => move(i, 1)}>↓</button>
                 <button className="text-xs text-status-delayed" onClick={() => remove(i)}>✕</button>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -118,8 +118,8 @@ export default function FlowBuilder() {
                 <Pick value={s.service_id} onChange={(v) => update(i, { service_id: v })}
                   options={services} placeholder="Service (optional)" />
                 <label className="flex items-center gap-1">
-                  <span className="text-neutral-500">min</span>
-                  <input type="number" className="w-16 rounded-control border border-neutral-300 px-2 py-1"
+                  <span className="text-muted">min</span>
+                  <input type="number" className="w-16 rounded-control border border-line px-2 py-1"
                     value={Math.round(s.est_duration_seconds / 60)}
                     onChange={(e) => update(i, { est_duration_seconds: (Number(e.target.value) || 1) * 60 })} />
                 </label>
@@ -139,7 +139,7 @@ export default function FlowBuilder() {
       </Card>
 
       <Card title="Preview">
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-muted">
           {stages.filter((s) => s.name).map((s) => s.name).join('  →  ') || '—'}
         </p>
       </Card>
@@ -151,7 +151,7 @@ function Pick({ value, onChange, options, placeholder }:
   { value: string; onChange: (v: string) => void; options: Row[]; placeholder: string }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="rounded-control border border-neutral-300 px-2 py-1">
+      className="rounded-control border border-line px-2 py-1">
       <option value="">{placeholder}</option>
       {options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
     </select>

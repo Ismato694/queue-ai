@@ -64,8 +64,8 @@ const branchName = (bs: Row[], id: string) => bs.find((b) => b.id === id)?.name 
 const deptName = (ds: Row[], id: string) => ds.find((d) => d.id === id)?.name ?? '—';
 
 function List({ rows, render }: { rows: Row[]; render: (r: Row) => string }) {
-  if (!rows.length) return <p className="text-sm text-neutral-400">None yet.</p>;
-  return <ul className="mb-3 space-y-1 text-sm">{rows.map((r) => <li key={r.id} className="text-neutral-700">• {render(r)}</li>)}</ul>;
+  if (!rows.length) return <p className="text-sm text-faint">None yet.</p>;
+  return <ul className="mb-3 space-y-1 text-sm">{rows.map((r) => <li key={r.id} className="text-ink">• {render(r)}</li>)}</ul>;
 }
 
 function AddOne({ placeholder, onAdd }: { placeholder: string; onAdd: (name: string) => void }) {
@@ -117,7 +117,7 @@ function Select({ value, onChange, options, placeholder }:
   { value: string; onChange: (v: string) => void; options: { v: string; l: string }[]; placeholder: string }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="rounded-control border border-neutral-300 px-2 py-2 text-sm">
+      className="rounded-control border border-line px-2 py-2 text-sm">
       <option value="">{placeholder}</option>
       {options.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
     </select>

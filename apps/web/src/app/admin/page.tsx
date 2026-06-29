@@ -7,7 +7,7 @@ export default function AdminHome() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-neutral-600">Configure your hospital, then build its flow.</p>
+        <p className="text-sm text-muted">Configure your hospital, then build its flow.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Link href="/admin/structure"><Card title="Structure">Branches · departments · services · staff →</Card></Link>
@@ -16,10 +16,10 @@ export default function AdminHome() {
         <Link href="/staff"><Card title="Staff view">Call next · complete →</Card></Link>
         <Link href="/manager"><Card title="Manager dashboard">Flow Score · Digital Twin · Flow Intelligence →</Card></Link>
       </div>
-      <p className="text-xs text-neutral-500">
+      <p className="text-xs text-muted">
         Public display: open <code>/display/&lt;branch QR token&gt;</code> on a waiting-room screen (numbers only).
       </p>
-      <p className="text-xs text-neutral-400">Law #0 — Time is the Product. Every screen removes a decision.</p>
+      <p className="text-xs text-faint">Law #0 — Time is the Product. Every screen removes a decision.</p>
     </div>
   );
 }

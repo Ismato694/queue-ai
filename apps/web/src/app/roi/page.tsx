@@ -27,7 +27,7 @@ export default function RoiPage() {
     <main className="mx-auto max-w-3xl px-6 py-12">
       <p className="text-sm font-medium text-accent">Queue.ai · ROI</p>
       <h1 className="mt-1 text-3xl font-semibold tracking-tight">What is your queue costing you?</h1>
-      <p className="mt-2 text-neutral-600">Adjust to your numbers. This models recovered revenue from fewer abandoned/no-show visits.</p>
+      <p className="mt-2 text-muted">Adjust to your numbers. This models recovered revenue from fewer abandoned/no-show visits.</p>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
@@ -48,12 +48,12 @@ export default function RoiPage() {
           <Stat label="Recovered revenue / month" value={ngn(recoveredRevenue)} />
           <Stat label="Queue.ai cost / month" value={ngn(monthlyCost)} muted />
           <div className="rounded-card bg-neutral-900 p-5 text-white">
-            <p className="text-xs uppercase tracking-widest text-neutral-400">Net benefit / month</p>
+            <p className="text-xs uppercase tracking-widest text-faint">Net benefit / month</p>
             <p className={`tnum text-4xl font-semibold ${net >= 0 ? 'text-status-calm' : 'text-status-delayed'}`}>{ngn(net)}</p>
-            <p className="mt-1 text-sm text-neutral-300">≈ {roiX.toFixed(1)}× return on cost</p>
+            <p className="mt-1 text-sm text-faint">≈ {roiX.toFixed(1)}× return on cost</p>
           </div>
           <Stat label="⏱ Hours Returned / month" value={`${Math.round(hoursReturnedMonth).toLocaleString()} h`} highlight />
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-faint">
             Annual net ≈ {ngn(net * 12)}. Modeled estimate — the pilot measures your actual numbers, free, in 2 weeks.
           </p>
         </div>
@@ -65,17 +65,17 @@ export default function RoiPage() {
 function Num({ label, value, set, step = 1 }: { label: string; value: number; set: (n: number) => void; step?: number }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-neutral-600">{label}</span>
+      <span className="mb-1 block text-muted">{label}</span>
       <input type="number" value={value} step={step} onChange={(e) => set(Number(e.target.value) || 0)}
-        className="tnum w-full rounded-control border border-neutral-300 px-3 py-2" />
+        className="tnum w-full rounded-control border border-line px-3 py-2" />
     </label>
   );
 }
 function Stat({ label, value, muted, highlight }: { label: string; value: string; muted?: boolean; highlight?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between border-b border-neutral-100 pb-2">
-      <span className="text-sm text-neutral-500">{label}</span>
-      <span className={`tnum text-lg font-semibold ${muted ? 'text-neutral-400' : highlight ? 'text-status-calm' : ''}`}>{value}</span>
+    <div className="flex items-baseline justify-between border-b border-line pb-2">
+      <span className="text-sm text-muted">{label}</span>
+      <span className={`tnum text-lg font-semibold ${muted ? 'text-faint' : highlight ? 'text-status-calm' : ''}`}>{value}</span>
     </div>
   );
 }

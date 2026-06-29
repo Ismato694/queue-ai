@@ -2,19 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light dark; }
+/* ── Theme tokens (03a §5.2). Light + dark; structural colors only. ── */
+:root {
+  --canvas: 250 250 250;     /* near-white page */
+  --surface: 255 255 255;    /* cards */
+  --surface2: 246 246 247;   /* insets */
+  --line: 230 230 232;       /* hairline borders */
+  --ink: 24 24 27;           /* primary text */
+  --muted: 113 113 122;      /* secondary */
+  --faint: 161 161 170;      /* tertiary */
+  --accent: 79 70 229;       /* indigo-600 */
+  --accent-ink: 255 255 255; /* text on accent */
+}
+.dark {
+  --canvas: 9 9 11;          /* zinc-950 */
+  --surface: 24 24 27;       /* zinc-900 */
+  --surface2: 32 32 36;
+  --line: 39 39 42;          /* zinc-800 */
+  --ink: 244 244 245;
+  --muted: 161 161 170;
+  --faint: 113 113 122;
+  --accent: 129 140 248;     /* indigo-400 — brighter on dark */
+  --accent-ink: 9 9 11;
+}
+
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body { @apply bg-canvas text-ink; }
 
 /* tabular figures so live numbers/ETAs don't jitter (03a §5.1) */
 .tnum { font-variant-numeric: tabular-nums; }
 
-body { @apply bg-neutral-50 text-neutral-900 antialiased; }
+/* refined selection + focus + scrollbar */
+::selection { background: rgb(var(--accent) / 0.18); }
+:focus-visible { outline: none; box-shadow: var(--tw-shadow, 0 0 0 3px rgb(var(--accent) / 0.25)); border-radius: 8px; }
+* { scrollbar-width: thin; scrollbar-color: rgb(var(--line)) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: rgb(var(--line)); border-radius: 999px; }
 
-/* accessibility: visible focus + honor reduced-motion (03a §5.4, §8) */
-:focus-visible { outline: 2px solid theme('colors.accent'); outline-offset: 2px; }
+/* skeleton shimmer for loading states */
+.skeleton { position: relative; overflow: hidden; background: rgb(var(--surface2)); }
+.skeleton::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(var(--line) / 0.6), transparent);
+  transform: translateX(-100%); animation: shimmer 1.4s infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

@@ -74,7 +74,7 @@ export default function Reception() {
     return () => { clearInterval(c); clearInterval(poll); sb.removeChannel(ch); };
   }, [loadQueue]);
 
-  if (loading) return <main className="p-10 text-sm text-neutral-500">Loading…</main>;
+  if (loading) return <main className="p-10 text-sm text-muted">Loading…</main>;
   if (!userId) { router.push('/login'); return null; }
   if (!organizationId) { router.push('/onboarding'); return null; }
 
@@ -104,14 +104,14 @@ export default function Reception() {
 
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
+      <header className="flex items-center justify-between border-b border-line bg-surface px-6 py-3">
         <span className="text-sm font-semibold text-accent">Queue.ai · Reception</span>
         {offline && (
           <span className="rounded-control bg-status-busy/10 px-2 py-1 text-xs text-status-busy">
             ⚠ Offline — showing last-known queue
           </span>
         )}
-        <button className="text-xs text-neutral-500 underline"
+        <button className="text-xs text-muted underline"
           onClick={async () => { await sb.auth.signOut(); router.push('/login'); }}>Sign out</button>
       </header>
 
@@ -122,7 +122,7 @@ export default function Reception() {
           <Button onClick={() => rpc('call_next', { p_branch_id: branchId, p_department_id: deptId })}
             disabled={!next}>▶ Call next</Button>
           {next && (
-            <span className="text-sm text-neutral-600">
+            <span className="text-sm text-muted">
               Next: <strong>{next.ticket_no}</strong> {acuityDot(next.acuity)} {next.patient_name}
             </span>
           )}
@@ -133,9 +133,9 @@ export default function Reception() {
             <div className="w-44"><Field label="Name" value={name} onChange={(e) => setName(e.target.value)} /></div>
             <div className="w-40"><Field label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+234…" /></div>
             <label className="text-sm">
-              <span className="mb-1 block text-neutral-600">Acuity</span>
+              <span className="mb-1 block text-muted">Acuity</span>
               <select value={acuity} onChange={(e) => setAcuity(e.target.value as any)}
-                className="rounded-control border border-neutral-300 px-2 py-2">
+                className="rounded-control border border-line px-2 py-2">
                 <option value="routine">Routine</option><option value="priority">Priority</option><option value="emergency">Emergency</option>
               </select>
             </label>
@@ -144,15 +144,15 @@ export default function Reception() {
         </Card>
 
         <Card title={`Queue — ${departments.find((d) => d.id === deptId)?.name ?? ''}`}>
-          {queue.length === 0 && <p className="text-sm text-neutral-400">No one waiting.</p>}
-          <ul className="divide-y divide-neutral-100">
+          {queue.length === 0 && <p className="text-sm text-faint">No one waiting.</p>}
+          <ul className="divide-y divide-line">
             {queue.map((r) => (
               <li key={r.stage_id} className="flex items-center gap-3 py-2 text-sm">
                 <span className="tnum w-16 font-medium">{r.ticket_no}</span>
                 <span className="w-6">{acuityDot(r.acuity)}</span>
                 <span className="flex-1">{r.patient_name ?? '—'}</span>
                 <StateBadge state={r.state} />
-                <span className="tnum w-12 text-right text-neutral-500">{waited(r.entered_state_at)}</span>
+                <span className="tnum w-12 text-right text-muted">{waited(r.entered_state_at)}</span>
                 <div className="flex gap-1">
                   {r.state === 'called' && <Mini onClick={() => rpc('serve_stage', { p_stage_id: r.stage_id })}>Serve</Mini>}
                   {(r.state === 'serving' || r.state === 'called') &&
@@ -164,7 +164,7 @@ export default function Reception() {
             ))}
           </ul>
         </Card>
-        <p className="text-xs text-neutral-400">Acuity-first ordering · every priority change is audited (R2). Live updates arrive in S3.</p>
+        <p className="text-xs text-faint">Acuity-first ordering · every priority change is audited (R2). Live updates arrive in S3.</p>
       </main>
     </div>
   );
@@ -174,9 +174,9 @@ function Picker({ label, value, onChange, options }:
   { label: string; value: string; onChange: (v: string) => void; options: Row[] }) {
   return (
     <label className="text-sm">
-      <span className="mb-1 block text-neutral-600">{label}</span>
+      <span className="mb-1 block text-muted">{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)}
-        className="rounded-control border border-neutral-300 px-2 py-2">
+        className="rounded-control border border-line px-2 py-2">
         {options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
       </select>
     </label>
@@ -185,7 +185,7 @@ function Picker({ label, value, onChange, options }:
 
 function StateBadge({ state }: { state: string }) {
   const map: Record<string, string> = {
-    active: 'text-neutral-500', called: 'text-status-info', serving: 'text-status-busy',
+    active: 'text-muted', called: 'text-status-info', serving: 'text-status-busy',
   };
   return <span className={`w-16 text-xs ${map[state] ?? ''}`}>{state}</span>;
 }
@@ -193,7 +193,7 @@ function StateBadge({ state }: { state: string }) {
 function Mini({ children, onClick, danger }: { children: React.ReactNode; onClick: () => void; danger?: boolean }) {
   return (
     <button onClick={onClick}
-      className={`rounded-control border px-2 py-1 text-xs ${danger ? 'border-red-200 text-status-delayed' : 'border-neutral-300 text-neutral-700'} hover:bg-neutral-100`}>
+      className={`rounded-control border px-2 py-1 text-xs ${danger ? 'border-status-delayed/30 text-status-delayed' : 'border-line text-ink'} hover:bg-surface2`}>
       {children}
     </button>
   );

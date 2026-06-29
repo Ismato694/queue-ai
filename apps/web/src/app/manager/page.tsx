@@ -59,7 +59,7 @@ export default function ManagerPage() {
     return () => { clearInterval(poll); sb.removeChannel(ch); };
   }, [load]);
 
-  if (loading) return <main className="p-10 text-sm text-neutral-500">Loading…</main>;
+  if (loading) return <main className="p-10 text-sm text-muted">Loading…</main>;
   if (!userId) { router.push('/login'); return null; }
   if (!organizationId) { router.push('/onboarding'); return null; }
 
@@ -67,21 +67,21 @@ export default function ManagerPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
+      <header className="flex items-center justify-between border-b border-line bg-surface px-6 py-3">
         <span className="text-sm font-semibold text-accent">Queue.ai · Manager</span>
         <select value={branchId} onChange={(e) => setBranchId(e.target.value)}
-          className="rounded-control border border-neutral-300 px-2 py-1 text-sm">
+          className="rounded-control border border-line px-2 py-1 text-sm">
           {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-6 py-8">
-        {!o ? <p className="text-sm text-neutral-500">Loading overview…</p> : (
+        {!o ? <p className="text-sm text-muted">Loading overview…</p> : (
           <>
             {/* Hours Returned — the mission KPI, everywhere (Law #0) */}
             {hr && (
               <div className="rounded-card bg-neutral-900 p-5 text-white">
-                <p className="text-xs uppercase tracking-widest text-neutral-400">Hours Returned</p>
+                <p className="text-xs uppercase tracking-widest text-faint">Hours Returned</p>
                 <div className="mt-2 flex flex-wrap gap-10">
                   <HR label="Today" seconds={hr.today_seconds} big />
                   <HR label="This month" seconds={hr.month_seconds} />
@@ -93,8 +93,8 @@ export default function ManagerPage() {
             {/* Flow Score hero + quiet metrics */}
             <div className="flex flex-wrap items-center gap-8">
               <div>
-                <p className="text-xs uppercase tracking-wide text-neutral-400">Flow Score</p>
-                <p className="tnum text-5xl font-semibold">{o.flow_score}<span className="text-2xl text-neutral-400">/100</span></p>
+                <p className="text-xs uppercase tracking-wide text-faint">Flow Score</p>
+                <p className="tnum text-5xl font-semibold">{o.flow_score}<span className="text-2xl text-faint">/100</span></p>
               </div>
               <Metric label="Waiting" value={`${o.waiting_total}`} />
               <Metric label="Avg wait" value={`${mins(o.avg_wait_seconds)}m`} />
@@ -107,10 +107,10 @@ export default function ManagerPage() {
             <Card title="Digital Twin — live">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                 {o.departments.map((d) => (
-                  <div key={d.name} className="rounded-control border border-neutral-200 p-3">
+                  <div key={d.name} className="rounded-control border border-line p-3">
                     <p className="text-sm font-medium">{d.name}</p>
                     <p className={`mt-1 text-sm ${statusColor[d.status]}`}>{dot[d.status]} {d.waiting} waiting</p>
-                    <p className="text-xs text-neutral-400">longest ~{mins(d.longest_wait_s)}m</p>
+                    <p className="text-xs text-faint">longest ~{mins(d.longest_wait_s)}m</p>
                   </div>
                 ))}
               </div>
@@ -124,15 +124,15 @@ export default function ManagerPage() {
                 <ul className="space-y-2">
                   {ops.map((w, i) => (
                     <li key={i} className="rounded-control border border-status-busy/30 bg-status-busy/5 p-3 text-sm">
-                      <p className="font-medium text-neutral-800">
+                      <p className="font-medium text-ink">
                         {w.department} will stay overloaded ~{w.clear_min} min ({w.waiting} waiting · {w.servers} staff)
                       </p>
-                      <p className="text-neutral-600">→ {w.recommend} (projected clear ~{w.projected_clear_min} min)</p>
+                      <p className="text-muted">→ {w.recommend} (projected clear ~{w.projected_clear_min} min)</p>
                     </li>
                   ))}
                 </ul>
               )}
-              <p className="mt-2 text-xs text-neutral-400">Heuristic forecast — sharpens as the pilot accumulates data (v2).</p>
+              <p className="mt-2 text-xs text-faint">Heuristic forecast — sharpens as the pilot accumulates data (v2).</p>
             </Card>
 
             {/* Simulation (F5) — what-if staffing */}
@@ -148,28 +148,28 @@ export default function ManagerPage() {
                   <span className={Number(sim.delta_pct) <= 0 ? 'text-status-calm' : 'text-status-delayed'}>
                     ({Number(sim.delta_pct) > 0 ? '+' : ''}{sim.delta_pct}%)
                   </span>{' '}
-                  <span className="text-neutral-400">· {sim.servers}→{sim.new_servers} staff, {sim.waiting} waiting</span>
+                  <span className="text-faint">· {sim.servers}→{sim.new_servers} staff, {sim.waiting} waiting</span>
                 </p>
               )}
             </Card>
 
             {/* Grounded Flow Intelligence (mock generation, real numbers) */}
             <Card title="🧠 Flow Intelligence">
-              <p className="text-sm text-neutral-700">{dailySummary(o)}</p>
+              <p className="text-sm text-ink">{dailySummary(o)}</p>
               <div className="mt-4 flex gap-2">
                 <input value={q} onChange={(e) => setQ(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && ask()}
                   placeholder="Ask: why is today slower?"
-                  className="flex-1 rounded-control border border-neutral-300 px-3 py-2 text-sm" />
+                  className="flex-1 rounded-control border border-line px-3 py-2 text-sm" />
                 <Button onClick={ask}>Ask</Button>
               </div>
               {a && (
-                <div className="mt-3 rounded-control bg-neutral-50 p-3 text-sm">
-                  <p className="text-neutral-800">{a.answer}</p>
-                  <p className="mt-2 text-xs text-neutral-400">grounded in: {a.citations.join(' · ')}</p>
+                <div className="mt-3 rounded-control bg-canvas p-3 text-sm">
+                  <p className="text-ink">{a.answer}</p>
+                  <p className="mt-2 text-xs text-faint">grounded in: {a.citations.join(' · ')}</p>
                 </div>
               )}
-              <p className="mt-2 text-xs text-neutral-400">Answers use live metrics only (mock generation — Claude swap-in ready).</p>
+              <p className="mt-2 text-xs text-faint">Answers use live metrics only (mock generation — Claude swap-in ready).</p>
             </Card>
           </>
         )}
@@ -183,8 +183,8 @@ function HR({ label, seconds, big }: { label: string; seconds: number; big?: boo
   const txt = hours >= 100 ? Math.round(hours).toLocaleString() : hours.toFixed(1);
   return (
     <div>
-      <p className="text-xs text-neutral-400">{label}</p>
-      <p className={`tnum font-semibold ${big ? 'text-4xl text-status-calm' : 'text-2xl'}`}>{txt}<span className="ml-1 text-base text-neutral-400">h</span></p>
+      <p className="text-xs text-faint">{label}</p>
+      <p className={`tnum font-semibold ${big ? 'text-4xl text-status-calm' : 'text-2xl'}`}>{txt}<span className="ml-1 text-base text-faint">h</span></p>
     </div>
   );
 }
@@ -192,7 +192,7 @@ function HR({ label, seconds, big }: { label: string; seconds: number; big?: boo
 function Metric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-neutral-400">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-faint">{label}</p>
       <p className={`tnum text-2xl font-semibold ${highlight ? 'text-status-calm' : ''}`}>{value}</p>
     </div>
   );

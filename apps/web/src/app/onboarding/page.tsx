@@ -30,7 +30,7 @@ export default function OnboardingPage() {
   return (
     <main className="mx-auto max-w-md px-6 py-20">
       <h1 className="mb-1 text-2xl font-semibold">Set up your hospital</h1>
-      <p className="mb-6 text-sm text-neutral-600">One step: create your organization and first branch.</p>
+      <p className="mb-6 text-sm text-muted">One step: create your organization and first branch.</p>
       <Card>
         <div className="space-y-3">
           <Field label="Organization name" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Lagoon Hospital" />

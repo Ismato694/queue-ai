@@ -24,7 +24,7 @@ export default function VisitPage() {
 
   useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t); }, [load]);
 
-  if (!s) return <main className="mx-auto max-w-md px-6 py-16 text-sm text-neutral-500">Loading your visit…</main>;
+  if (!s) return <main className="mx-auto max-w-md px-6 py-16 text-sm text-muted">Loading your visit…</main>;
 
   const current = s.stages.find((x) => x.is_current);
   const isPreQueue = current?.state === 'pre_queue';
@@ -50,7 +50,7 @@ export default function VisitPage() {
         </div>
       ) : (
         <div className="mt-4">
-          <p className="text-sm text-neutral-500">You'll be seen in</p>
+          <p className="text-sm text-muted">You'll be seen in</p>
           <p className="tnum text-4xl font-semibold">
             {s.eta_low_s == null || s.eta_high_s == null
               ? 'calculating…'
@@ -60,12 +60,12 @@ export default function VisitPage() {
           </p>
           {s.confidence != null && (
             <div className="mt-2">
-              <p className="text-sm text-neutral-600">{Math.round(s.confidence * 100)}% confidence</p>
-              <div className="mt-1 h-1.5 w-40 overflow-hidden rounded-full bg-neutral-200">
+              <p className="text-sm text-muted">{Math.round(s.confidence * 100)}% confidence</p>
+              <div className="mt-1 h-1.5 w-40 overflow-hidden rounded-full bg-surface2">
                 <div className="h-full bg-status-calm" style={{ width: `${Math.round(s.confidence * 100)}%` }} />
               </div>
               {s.reasons?.length > 0 && (
-                <ul className="mt-2 text-xs text-neutral-500">
+                <ul className="mt-2 text-xs text-muted">
                   {s.reasons.map((r, i) => <li key={i}>• {r}</li>)}
                 </ul>
               )}
@@ -82,12 +82,12 @@ export default function VisitPage() {
       )}
 
       <div className="mt-8">
-        <h2 className="mb-3 text-sm font-semibold text-neutral-500">Your journey</h2>
+        <h2 className="mb-3 text-sm font-semibold text-muted">Your journey</h2>
         <ol className="space-y-2">
           {s.stages.map((st, i) => (
             <li key={i} className="flex items-center gap-3 text-sm">
               <span className="w-5">{icon(st)}</span>
-              <span className={st.is_current ? 'font-medium text-neutral-900' : 'text-neutral-500'}>
+              <span className={st.is_current ? 'font-medium text-ink' : 'text-muted'}>
                 {st.name}{st.is_current ? '  ← you are here' : ''}
               </span>
             </li>
@@ -95,7 +95,7 @@ export default function VisitPage() {
         </ol>
       </div>
 
-      <p className="mt-10 text-xs text-neutral-400">Law #0 — we're saving you time. Keep this page; it updates live.</p>
+      <p className="mt-10 text-xs text-faint">Law #0 — we're saving you time. Keep this page; it updates live.</p>
     </main>
   );
 }

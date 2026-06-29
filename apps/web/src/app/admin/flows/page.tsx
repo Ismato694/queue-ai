@@ -28,15 +28,15 @@ export default function FlowsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Flow Builder</h1>
-        <p className="text-sm text-neutral-600">Define the patient journey — the same engine works for any industry (F1).</p>
+        <p className="text-sm text-muted">Define the patient journey — the same engine works for any industry (F1).</p>
       </div>
 
       <Card title="Your flows">
-        {flows.length === 0 && <p className="mb-3 text-sm text-neutral-400">No flows yet. Create one below.</p>}
+        {flows.length === 0 && <p className="mb-3 text-sm text-faint">No flows yet. Create one below.</p>}
         <ul className="mb-3 space-y-2">
           {flows.map((f) => (
             <li key={f.id} className="flex items-center justify-between text-sm">
-              <span>{f.name} {f.is_published ? <span className="text-status-calm">· published</span> : <span className="text-neutral-400">· draft</span>}</span>
+              <span>{f.name} {f.is_published ? <span className="text-status-calm">· published</span> : <span className="text-faint">· draft</span>}</span>
               <Link className="text-accent underline" href={`/admin/flows/${f.id}`}>Edit →</Link>
             </li>
           ))}

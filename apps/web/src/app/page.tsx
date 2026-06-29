@@ -10,13 +10,13 @@ export default function Home() {
       <h1 className="mt-2 text-3xl font-semibold tracking-tight">
         Removing decisions. Giving people their time back.
       </h1>
-      <p className="mt-4 text-neutral-600">
+      <p className="mt-4 text-muted">
         Foundation scaffold (Sprint&nbsp;S0). Database schema, RLS, tenant model, and the
         hospital care-pathway seed are in place. Next: connect a Supabase project and wire auth.
       </p>
 
-      <div className="mt-8 rounded-card border border-neutral-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-neutral-500">Environment check</h2>
+      <div className="mt-8 rounded-card border border-line bg-surface p-5">
+        <h2 className="text-sm font-semibold text-muted">Environment check</h2>
         <ul className="mt-3 space-y-1 text-sm">
           <li>
             Supabase configured:{' '}
@@ -35,7 +35,7 @@ export default function Home() {
         <Link href="/roi" className="ml-3 text-sm text-accent underline">ROI calculator</Link>
       </div>
 
-      <p className="mt-8 text-xs text-neutral-400">
+      <p className="mt-8 text-xs text-faint">
         Law&nbsp;#0 — Time is the Product. See <code>/docs</code> for the full spec.
       </p>
     </main>

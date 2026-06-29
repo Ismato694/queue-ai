@@ -39,7 +39,7 @@ export default function JoinPage() {
   }
 
   if (!supabaseConfigured) return <Shell><p className="text-sm text-status-busy">Not configured yet.</p></Shell>;
-  if (!branch) return <Shell><p className="text-sm text-neutral-500">Loading…</p></Shell>;
+  if (!branch) return <Shell><p className="text-sm text-muted">Loading…</p></Shell>;
 
   return (
     <Shell>
@@ -49,9 +49,9 @@ export default function JoinPage() {
         <div className="space-y-3">
           {branch.flows.length > 1 && (
             <label className="block text-sm">
-              <span className="mb-1 block text-neutral-600">Service</span>
+              <span className="mb-1 block text-muted">Service</span>
               <select value={flowId} onChange={(e) => setFlowId(e.target.value)}
-                className="w-full rounded-control border border-neutral-300 px-3 py-2">
+                className="w-full rounded-control border border-line px-3 py-2">
                 {branch.flows.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </label>
@@ -64,7 +64,7 @@ export default function JoinPage() {
           </div>
           {msg && <p className="text-sm text-status-delayed">{msg}</p>}
           <Button onClick={join} disabled={busy || !phone}>{busy ? '…' : 'Get my ticket'}</Button>
-          <p className="text-xs text-neutral-400">You'll get a live tracker and updates.</p>
+          <p className="text-xs text-faint">You'll get a live tracker and updates.</p>
         </div>
       </Card>
     </Shell>
@@ -77,7 +77,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={`flex-1 rounded-control border px-3 py-2 ${on ? 'border-accent bg-accent/5 text-accent' : 'border-neutral-300 text-neutral-600'}`}>
+      className={`flex-1 rounded-control border px-3 py-2 ${on ? 'border-accent bg-accent/5 text-accent' : 'border-line text-muted'}`}>
       {children}
     </button>
   );

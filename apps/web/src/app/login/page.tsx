@@ -42,7 +42,7 @@ export default function LoginPage() {
           </Button>
         </div>
         <button
-          className="mt-4 text-xs text-neutral-500 underline"
+          className="mt-4 text-xs text-muted underline"
           onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
         >
           {mode === 'login' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
