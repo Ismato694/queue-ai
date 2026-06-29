@@ -79,13 +79,18 @@ export default function Reception() {
   if (!organizationId) { router.push('/onboarding'); return null; }
 
   const sb = getSupabase();
-  const rpc = async (fn: string, args: Row) => { await sb.rpc(fn, args); await loadQueue(); };
+  const rpc = async (fn: string, args: Row) => {
+    const { error } = await sb.rpc(fn, args);
+    if (error) { alert(`${fn} failed: ${error.message}`); return; }
+    await loadQueue();
+  };
 
   const addWalkin = async () => {
     if (!phone) return;
-    await sb.rpc('create_walkin_visit', {
+    const { error } = await sb.rpc('create_walkin_visit', {
       p_branch_id: branchId, p_flow_id: null, p_name: name || 'Walk-in', p_phone: phone, p_acuity: acuity,
     });
+    if (error) { alert(`Add failed: ${error.message}`); return; }
     setName(''); setPhone(''); setAcuity('routine'); await loadQueue();
   };
 
