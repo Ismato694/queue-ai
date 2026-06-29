@@ -47,7 +47,7 @@ export default function StaffPage() {
   const sb = getSupabase();
   const rpc = async (fn: string, args: Row) => { await sb.rpc(fn, args); await loadQueue(); };
   const setStatus = async (status: string) => {
-    if (me) { await sb.from('staff').update({ status }).eq('id', me.id); setMe({ ...me, status }); }
+    if (me) { await sb.rpc('set_staff_status', { p_status: status }); setMe({ ...me, status }); }
   };
 
   const serving = queue.find((r) => r.state === 'serving');

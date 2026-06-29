@@ -1,0 +1,38 @@
+name: DB CI
+# Audit C1: validate migrations + RLS + queue engine against a real Postgres (with
+# postgis/pgvector/pgcrypto). Catches the class of RLS/permission bugs that previously
+# only surfaced on live Supabase.
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  db:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        # Supabase's Postgres image ships postgis + vector + pgcrypto. Bump tag if it 404s.
+        image: supabase/postgres:15.8.1.060
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+    env:
+      PGPASSWORD: postgres
+      PSQL: psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for Postgres
+        run: until pg_isready -h localhost -U postgres; do sleep 2; done
+      - name: Shim (CI-only auth/roles)
+        run: $PSQL -f supabase/test/00_shim.sql
+      - name: Apply migrations
+        run: for f in supabase/migrations/0*.sql; do echo "→ $f"; $PSQL -f "$f"; done
+      - name: Seed
+        run: $PSQL -f supabase/seed.sql
+      - name: Queue-engine smoke test
+        run: $PSQL -f supabase/dev/smoke_test.sql
+      - name: RLS tenant-isolation test
+        run: $PSQL -f supabase/test/10_rls_isolation.sql

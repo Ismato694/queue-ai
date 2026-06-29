@@ -1,5 +1,7 @@
 # Queue.ai — API Design
 
+> ⚠️ **Partly superseded by the Supabase pivot (Phase 9).** The MVP uses Supabase PostgREST + RPC + Realtime, not this REST/WebSocket contract. Treat this as the target design if a dedicated API layer is reintroduced. See `ADR-001-baas-architecture.md`.
+
 **Version:** 1.0 (for approval)
 **Phase:** 5
 **Over:** [04-DATABASE.md](04-DATABASE.md) schema · serves [02 flows](02-USER-FLOWS.md) & [03 screens](03-WIREFRAMES.md).

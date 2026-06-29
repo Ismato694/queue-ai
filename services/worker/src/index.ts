@@ -64,10 +64,19 @@ const server = createServer((req, res) => {
   res.writeHead(404); res.end();
 });
 
+// ── Intelligence rollups (audit H1): populate staff_throughput + daily_metrics ──
+async function rollups() {
+  if (!admin) return;
+  await admin.rpc('rollup_throughput', { p_window_min: 60 });
+  await admin.rpc('rollup_daily_metrics');
+}
+
 server.listen(PORT, () => {
   console.log(`[worker] listening on :${PORT}${admin ? '' : ' (no Supabase creds — jobs idle)'}`);
   if (admin) {
     setInterval(() => { dispatchNotifications().catch((e) => console.error('[notify]', e)); }, 5000);
     setInterval(() => { sweepNoShows().catch((e) => console.error('[sweep]', e)); }, 15000);
+    setInterval(() => { rollups().catch((e) => console.error('[rollup]', e)); }, 15 * 60 * 1000);
+    rollups().catch((e) => console.error('[rollup]', e)); // once on boot
   }
 });

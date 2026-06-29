@@ -1,5 +1,7 @@
 # Queue.ai — System Architecture
 
+> ⚠️ **Partly superseded by the Supabase pivot (Phase 9).** Built as Supabase-direct (PostgREST + RPC + Realtime + a Node worker), not the NestJS/Redis/Socket.IO design below. See `ADR-001-baas-architecture.md`.
+
 **Version:** 1.0 (for approval)
 **Phase:** 6
 **Over:** [04 schema](04-DATABASE.md) + [05 API](05-API.md). Stack from [01c](01c-TECH-STACK.md). Hosted **AWS af-south-1**.
