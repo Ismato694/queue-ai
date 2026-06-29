@@ -9,18 +9,29 @@ type Status = {
   eta_low_s: number | null; eta_high_s: number | null;
   confidence: number | null; reasons: string[]; stages: Stage[];
 };
+type Leave = {
+  state: string | null; travel_seconds: number | null;
+  wait_if_join_now_s: number | null; leave_now: boolean;
+};
 const mins = (s: number) => Math.max(1, Math.round(s / 60));
+const TRAVEL_CHOICES = [5, 10, 15, 20, 30, 45]; // minutes away
 
 export default function VisitPage() {
   const id = String(useParams().id);
   const [s, setS] = useState<Status | null>(null);
+  const [leave, setLeave] = useState<Leave | null>(null);
   const [acting, setActing] = useState(false);
   const [gpsMsg, setGpsMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!supabaseConfigured) return;
-    const { data } = await getSupabase().rpc('get_visit_status', { p_visit_id: id });
-    if (data) setS(data as Status);
+    const sb = getSupabase();
+    const [st, lv] = await Promise.all([
+      sb.rpc('get_visit_status', { p_visit_id: id }),
+      sb.rpc('get_leave_status', { p_visit_id: id }),
+    ]);
+    if (st.data) setS(st.data as Status);
+    if (lv.data) setLeave(lv.data as Leave);
   }, [id]);
 
   useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t); }, [load]);
@@ -35,6 +46,12 @@ export default function VisitPage() {
   async function activate() {
     setActing(true);
     try { await getSupabase().rpc('activate_visit', { p_visit_id: id, p_trigger: 'on_my_way' }); await load(); }
+    finally { setActing(false); }
+  }
+
+  async function setTravel(minutes: number) {
+    setActing(true);
+    try { await getSupabase().rpc('set_travel_time', { p_visit_id: id, p_travel_seconds: minutes * 60 }); await load(); }
     finally { setActing(false); }
   }
 
@@ -69,6 +86,12 @@ export default function VisitPage() {
           <p className="text-sm text-status-info">● It's your turn</p>
           <p className="mt-1 text-2xl font-semibold">Please proceed to {current?.name}</p>
         </div>
+      ) : leave?.leave_now ? (
+        <div className="mt-4 rounded-card border border-status-calm/40 bg-status-calm/10 p-5">
+          <p className="text-sm font-medium text-status-calm">🚶 Leave now</p>
+          <p className="mt-1 text-2xl font-semibold">Head to {s.branch_name}</p>
+          <p className="mt-1 text-sm text-muted">You're in the queue — leave now and you'll arrive right as you're called.</p>
+        </div>
       ) : (
         <div className="mt-4">
           <p className="text-sm text-muted">You'll be seen in</p>
@@ -95,17 +118,48 @@ export default function VisitPage() {
         </div>
       )}
 
-      {isPreQueue && !done && (
-        <div className="mt-5 space-y-2">
-          <button onClick={activate} disabled={acting}
-            className="w-full rounded-control bg-accent px-4 py-3 font-medium text-white">
-            {acting ? '…' : "I'm on my way"}
-          </button>
-          <button onClick={checkInGps} disabled={acting}
-            className="w-full rounded-control border border-line px-4 py-3 text-sm font-medium text-muted">
-            📍 Check in with my location
-          </button>
-          {gpsMsg && <p className="text-center text-xs text-muted">{gpsMsg}</p>}
+      {isPreQueue && !done && !leave?.leave_now && (
+        <div className="mt-5 space-y-3">
+          {leave?.travel_seconds == null ? (
+            <div className="rounded-card border border-line p-4">
+              <p className="text-sm font-medium">How far away are you?</p>
+              <p className="mt-0.5 text-xs text-muted">We'll tell you exactly when to leave — no need to watch this page.</p>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {TRAVEL_CHOICES.map((m) => (
+                  <button key={m} onClick={() => setTravel(m)} disabled={acting}
+                    className="rounded-control border border-line px-2 py-2 text-sm text-ink hover:border-accent">
+                    {m} min
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-card border border-line p-4">
+              <p className="text-sm font-medium">✓ We'll alert you when to leave</p>
+              <p className="mt-1 text-sm text-muted">
+                You're about <b>{mins(leave.travel_seconds)} min</b> away. Current wait if you left now:{' '}
+                <b>~{leave.wait_if_join_now_s != null ? mins(leave.wait_if_join_now_s) : '—'} min</b>. Sit tight.
+              </p>
+              <button onClick={() => setTravel(-1)} disabled={acting} className="mt-2 text-xs text-muted underline">
+                Change distance
+              </button>
+            </div>
+          )}
+
+          <details className="text-sm text-muted">
+            <summary className="cursor-pointer">Or check in manually</summary>
+            <div className="mt-2 space-y-2">
+              <button onClick={activate} disabled={acting}
+                className="w-full rounded-control bg-accent px-4 py-3 font-medium text-white">
+                {acting ? '…' : "I'm on my way"}
+              </button>
+              <button onClick={checkInGps} disabled={acting}
+                className="w-full rounded-control border border-line px-4 py-3 text-sm font-medium text-muted">
+                📍 Check in with my location
+              </button>
+              {gpsMsg && <p className="text-center text-xs text-muted">{gpsMsg}</p>}
+            </div>
+          </details>
         </div>
       )}
 

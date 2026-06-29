@@ -108,6 +108,12 @@ async function predictions() {
   await admin.rpc('score_pending_predictions');
 }
 
+// ── "Leave now" alert (0030): pull parked patients into the queue at the right moment ──
+async function leaveNow() {
+  if (!admin) return;
+  await admin.rpc('process_leave_now');
+}
+
 server.listen(PORT, () => {
   console.log(`[worker] listening on :${PORT}${admin ? '' : ' (no Supabase creds — jobs idle)'}`);
   if (admin) {
@@ -115,6 +121,7 @@ server.listen(PORT, () => {
     setInterval(() => { sweepNoShows().catch((e) => console.error('[sweep]', e)); }, 15000);
     setInterval(() => { rollups().catch((e) => console.error('[rollup]', e)); }, 15 * 60 * 1000);
     setInterval(() => { predictions().catch((e) => console.error('[predict]', e)); }, 30 * 1000);
+    setInterval(() => { leaveNow().catch((e) => console.error('[leave]', e)); }, 30 * 1000);
     rollups().catch((e) => console.error('[rollup]', e)); // once on boot
   }
 });

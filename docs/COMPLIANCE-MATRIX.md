@@ -24,6 +24,7 @@
 | **Queue verbs: transfer / skip / delay / requeue** | ✓ | ✓ | ✅ | | | ❌ | `0025` RPCs (`transfer_stage`/`delay_stage`/`requeue_stage`/`skip_stage`) via `app.assert_transition`; staff-app buttons wired; not live-tested |
 | **ETA + Trust Engine (F11)** (range+confidence+reasons) | ✓ | ✓ | ✅ | | | Ⓛ | `get_visit_status`; live UAT showed conf+reasons |
 | **Trust accuracy feedback loop (07 §11)** | ✓ | ✓ | ✅ | | | ❌ | `0026` snapshot→score loop (worker, 30s) + `prediction_accuracy` RPC; ETA-accuracy % on manager dashboard; not live-tested |
+| **"Leave now" alert (leave_by / Law #0)** | ✓ | ✓ | ✅ | | | ❌ | `0030`: patient sets travel time → `process_leave_now` (worker, 30s) auto-activates + notifies when dept wait ≈ travel; visit-page picker + banner; needs worker running; not live-tested |
 | **Journey Timeline (F4)** | ✓ | ✓ | ✅ | | | Ⓛ | visit page; UAT |
 | **Grace window / no-show (R4)** | ✓ | ✓ | ✅ | | | ❌ | sweep in worker + `requeue_stage` grace path (`0025`); not live-tested |
 | **Notifications (R6)** push/SMS/email | ✓ | ✓ | | ◑ | | ❌ | real SMS via Termii (`get_sms_target` `0027` + worker; live when `TERMII_API_KEY` set, else simulated); push/email still not sent |
