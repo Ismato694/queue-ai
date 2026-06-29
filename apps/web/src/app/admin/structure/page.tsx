@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { getSupabase } from '@/lib/supabase';
 import { useSession } from '@/lib/useSession';
 import { Button, Card, Field } from '@/lib/ui';
@@ -12,6 +13,8 @@ export default function StructurePage() {
   const [departments, setDepartments] = useState<Row[]>([]);
   const [services, setServices] = useState<Row[]>([]);
   const [staff, setStaff] = useState<Row[]>([]);
+  const [origin, setOrigin] = useState('');
+  useEffect(() => { setOrigin(window.location.origin); }, []);
 
   const load = useCallback(async () => {
     const sb = getSupabase();
@@ -63,6 +66,16 @@ export default function StructurePage() {
         <AddOne placeholder="Branch name" onAdd={(name) => insert('branches', { name })} />
       </Card>
 
+      <Card title="Branch access — QR & links">
+        {!branches.length ? <p className="text-sm text-faint">Add a branch first.</p> : (
+          <div className="space-y-6">
+            {branches.filter((b) => b.qr_token).map((b) => (
+              <BranchAccess key={b.id} branch={b} origin={origin} />
+            ))}
+          </div>
+        )}
+      </Card>
+
       <Card title="Departments">
         <List rows={departments} render={(r) => `${r.name} · ${branchName(branches, r.branch_id)}`} />
         <AddDept branches={branches} onAdd={(name, branch_id) => insert('departments', { name, branch_id })} />
@@ -79,6 +92,44 @@ export default function StructurePage() {
         <AddStaff departments={departments} onAdd={(display_name, role, department_id) =>
           insert('staff', { display_name, role, department_id })} />
       </Card>
+    </div>
+  );
+}
+
+// Per-branch access: the customer join QR + the three shareable links.
+function BranchAccess({ branch, origin }: { branch: Row; origin: string }) {
+  const joinUrl = `${origin}/join/${branch.qr_token}`;
+  const displayUrl = `${origin}/display/${branch.qr_token}`;
+  const publicUrl = `${origin}/q/${branch.qr_token}`;
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+      <div className="shrink-0 rounded-card border border-line bg-white p-3">
+        {origin && <QRCodeSVG value={joinUrl} size={128} />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-medium">{branch.name}</p>
+        <p className="text-xs text-muted">Patients scan this QR to join the queue. Print it for the entrance/reception.</p>
+        <div className="mt-3 space-y-2">
+          <LinkRow label="Customer join" url={joinUrl} />
+          <LinkRow label="Waiting-room display" url={displayUrl} />
+          <LinkRow label={`Public wait board${branch.publish_public_wait ? '' : ' (off)'}`} url={publicUrl} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LinkRow({ label, url }: { label: string; url: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="w-40 shrink-0 text-muted">{label}</span>
+      <a href={url} target="_blank" rel="noreferrer" className="truncate text-accent underline">{url}</a>
+      <button
+        onClick={() => { navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1200); }}
+        className="shrink-0 rounded border border-line px-2 py-0.5 text-muted">
+        {copied ? 'Copied' : 'Copy'}
+      </button>
     </div>
   );
 }

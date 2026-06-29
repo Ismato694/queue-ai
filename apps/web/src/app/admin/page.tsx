@@ -17,7 +17,8 @@ export default function AdminHome() {
         <Link href="/manager"><Card title="Manager dashboard">Flow Score · Digital Twin · Flow Intelligence →</Card></Link>
       </div>
       <p className="text-xs text-muted">
-        Public display: open <code>/display/&lt;branch QR token&gt;</code> on a waiting-room screen (numbers only).
+        QR code & shareable links (customer join, waiting-room display, public board) are in{' '}
+        <Link href="/admin/structure" className="text-accent underline">Structure → Branch access</Link>.
       </p>
       <p className="text-xs text-faint">Law #0 — Time is the Product. Every screen removes a decision.</p>
     </div>

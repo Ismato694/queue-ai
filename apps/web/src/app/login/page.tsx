@@ -4,6 +4,16 @@ import { useRouter } from 'next/navigation';
 import { getSupabase, supabaseConfigured } from '@/lib/supabase';
 import { Button, Card, Field } from '@/lib/ui';
 
+// each staff role has a home screen (org_admin → admin console)
+function routeForRole(role?: string | null): string {
+  switch (role) {
+    case 'manager': return '/manager';
+    case 'receptionist': return '/reception';
+    case 'staff': return '/staff';
+    default: return '/admin'; // org_admin / unknown
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -16,12 +26,20 @@ export default function LoginPage() {
     setBusy(true); setMsg(null);
     try {
       const sb = getSupabase();
-      const fn = mode === 'login'
-        ? sb.auth.signInWithPassword({ email, password })
-        : sb.auth.signUp({ email, password });
-      const { error } = await fn;
+      const { data, error } = mode === 'login'
+        ? await sb.auth.signInWithPassword({ email, password })
+        : await sb.auth.signUp({ email, password });
       if (error) { setMsg(error.message); return; }
-      router.push('/admin');
+
+      // signup may require email confirmation → no session yet
+      const uid = data.session?.user?.id;
+      if (!uid) { setMsg('Account created — check your email to confirm, then sign in.'); setMode('login'); return; }
+
+      // route each person to their own screen by role
+      const { data: me } = await sb.from('staff')
+        .select('role, organization_id').eq('user_id', uid).maybeSingle();
+      if (!me?.organization_id) { router.push('/onboarding'); return; }
+      router.push(routeForRole(me.role));
     } finally { setBusy(false); }
   }
 
