@@ -32,6 +32,7 @@ export default function Home() {
           Open admin →
         </Link>
         <Link href="/login" className="ml-3 text-sm text-accent underline">Sign in</Link>
+        <Link href="/roi" className="ml-3 text-sm text-accent underline">ROI calculator</Link>
       </div>
 
       <p className="mt-8 text-xs text-neutral-400">

@@ -31,7 +31,7 @@
 | 15 | DevOps & Deployment | `15-DEVOPS.md` ✅ (Vercel + worker host + Supabase prod; go-live + security checklists) | Approval |
 | 16 | Industry Expansion | `16-INDUSTRY-EXPANSION.md` ✅ + **Flow Builder template library** (hospital · bank · passport · university) | Approval |
 | 16.5 | **Flow Intelligence v2** | ✅ heuristic Predictive Ops (F13) + Capacity rec (F2) + Simulation (F5) on Manager dashboard; Org Memory (F14) scaffolded (needs pilot data) | Approval |
-| 17 | **Commercialization** | `17-COMMERCIALIZATION.md` (sales · success · marketing · partnerships · analytics) | Approval |
+| 17 | **Commercialization** | `17-COMMERCIALIZATION.md` + `17a-SALES-ONEPAGER.md` ✅ + **live /roi calculator** in-app | Approval |
 
 **Rule:** Stop after every phase. Wait for explicit approval before starting the next.
 
