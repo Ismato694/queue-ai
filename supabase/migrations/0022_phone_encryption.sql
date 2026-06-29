@@ -42,6 +42,8 @@ alter table customers add column if not exists phone_bidx text;
 update customers set phone_enc = app.enc(phone), phone_bidx = app.bidx(phone)
   where phone is not null and phone_bidx is null;
 alter table customers drop constraint if exists customers_phone_key;
+-- reception_queue (0011) reads customers.phone; drop it first, recreated below with phone_last4
+drop view if exists reception_queue;
 alter table customers drop column if exists phone;
 create unique index if not exists customers_phone_bidx_key on customers (phone_bidx);
 
