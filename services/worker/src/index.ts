@@ -30,6 +30,23 @@ async function dispatchNotifications() {
 
 async function send(n: Record<string, any>): Promise<boolean> {
   const text = messageFor(n.event_type);
+
+  // WhatsApp channel (Meta Cloud API) — needs the recipient's number (decrypt via RPC)
+  if (n.channel === 'whatsapp' && process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID && admin) {
+    const { data } = await admin.rpc('get_sms_target', { p_notification_id: n.id });
+    const phone = (data as { phone?: string } | null)?.phone?.replace(/^\+/, '');
+    if (!phone) { console.warn(`[notify] no phone for ${n.id}`); return false; }
+    try {
+      const res = await fetch(`https://graph.facebook.com/v21.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ messaging_product: 'whatsapp', to: phone, type: 'text', text: { body: text } }),
+      });
+      if (!res.ok) { console.error(`[notify] WhatsApp ${res.status}`); return false; }
+      return true;
+    } catch (e) { console.error('[notify] whatsapp error', e); return false; }
+  }
+
   const termiiKey = process.env.TERMII_API_KEY;
   if (termiiKey && admin) {
     // resolve the (encrypted) recipient via the service-role-only RPC, then send

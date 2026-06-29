@@ -67,9 +67,22 @@ export default function JoinPage() {
           <p className="text-xs text-faint">You'll get a live tracker and updates.</p>
         </div>
       </Card>
+
+      {waNumber && (
+        <a href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`JOIN ${token}`)}`}
+          target="_blank" rel="noreferrer"
+          className="mt-3 flex items-center justify-center gap-2 rounded-control border border-line px-4 py-3 text-sm font-medium text-muted">
+          💬 Join on WhatsApp instead
+        </a>
+      )}
+      <div className="mt-4 text-center">
+        <a href={`/q/${token}`} className="text-xs text-muted underline">See live wait times first</a>
+      </div>
     </Shell>
   );
 }
+
+const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
 
 function Shell({ children }: { children: React.ReactNode }) {
   return <main className="mx-auto max-w-md px-6 py-16">{children}</main>;

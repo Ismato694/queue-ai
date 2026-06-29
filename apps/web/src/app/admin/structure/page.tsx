@@ -31,12 +31,35 @@ export default function StructurePage() {
     await load();
   };
 
+  const updateBranch = async (id: string, patch: Row) => {
+    await getSupabase().from('branches').update(patch).eq('id', id);
+    await load();
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Structure</h1>
 
       <Card title="Branches">
-        <List rows={branches} render={(r) => r.name} />
+        {!branches.length ? <p className="text-sm text-faint">None yet.</p> : (
+          <ul className="mb-3 space-y-2 text-sm">
+            {branches.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-ink">• {r.name}</span>
+                <label className="flex items-center gap-1 text-xs text-muted">
+                  <input type="checkbox" checked={!!r.publish_public_wait}
+                    onChange={(e) => updateBranch(r.id, { publish_public_wait: e.target.checked })} />
+                  Public wait board
+                </label>
+                {r.publish_public_wait && r.qr_token && (
+                  <a href={`/q/${r.qr_token}`} target="_blank" rel="noreferrer" className="text-xs text-accent underline">
+                    /q/{String(r.qr_token).slice(0, 6)}…
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
         <AddOne placeholder="Branch name" onAdd={(name) => insert('branches', { name })} />
       </Card>
 
