@@ -55,6 +55,25 @@ export default function VisitPage() {
     finally { setActing(false); }
   }
 
+  function setTravelFromGps() {
+    if (!('geolocation' in navigator)) { setGpsMsg('Location not available on this device.'); return; }
+    setActing(true); setGpsMsg('Measuring your distance…');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { data } = await getSupabase().rpc('set_travel_from_gps', {
+            p_visit_id: id, p_lat: pos.coords.latitude, p_lng: pos.coords.longitude,
+          });
+          const r = data as { ok: boolean; reason?: string; travel_seconds?: number } | null;
+          if (r?.ok) { setGpsMsg(null); await load(); }
+          else setGpsMsg('This branch has no location set; pick your distance below instead.');
+        } finally { setActing(false); }
+      },
+      () => { setGpsMsg('Couldn\'t read your location; pick your distance below.'); setActing(false); },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
   function checkInGps() {
     if (!('geolocation' in navigator)) { setGpsMsg('Location not available on this device.'); return; }
     setActing(true); setGpsMsg('Checking your location…');
@@ -124,7 +143,12 @@ export default function VisitPage() {
             <div className="rounded-card border border-line p-4">
               <p className="text-sm font-medium">How far away are you?</p>
               <p className="mt-0.5 text-xs text-muted">We'll tell you exactly when to leave — no need to watch this page.</p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <button onClick={setTravelFromGps} disabled={acting}
+                className="mt-3 w-full rounded-control border border-accent px-3 py-2 text-sm font-medium text-accent">
+                📍 Use my location (auto)
+              </button>
+              <p className="mt-2 text-center text-xs text-faint">or pick manually</p>
+              <div className="mt-1 grid grid-cols-3 gap-2">
                 {TRAVEL_CHOICES.map((m) => (
                   <button key={m} onClick={() => setTravel(m)} disabled={acting}
                     className="rounded-control border border-line px-2 py-2 text-sm text-ink hover:border-accent">
@@ -132,6 +156,7 @@ export default function VisitPage() {
                   </button>
                 ))}
               </div>
+              {gpsMsg && <p className="mt-2 text-center text-xs text-muted">{gpsMsg}</p>}
             </div>
           ) : (
             <div className="rounded-card border border-line p-4">

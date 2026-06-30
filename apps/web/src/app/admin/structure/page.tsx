@@ -88,9 +88,25 @@ export default function StructurePage() {
       </Card>
 
       <Card title="Staff">
-        <List rows={staff} render={(r) => `${r.display_name} · ${r.role} · ${deptName(departments, r.department_id)}`} />
-        <AddStaff departments={departments} onAdd={(display_name, role, department_id) =>
-          insert('staff', { display_name, role, department_id })} />
+        {!staff.length ? <p className="text-sm text-faint">None yet.</p> : (
+          <ul className="mb-3 space-y-1 text-sm">
+            {staff.map((r) => (
+              <li key={r.id} className="text-ink">
+                • {r.display_name} · {r.role} · {deptName(departments, r.department_id)}{' '}
+                {r.user_id
+                  ? <span className="text-xs text-status-calm">✓ login active</span>
+                  : r.invite_email
+                    ? <span className="text-xs text-muted">invite sent: {r.invite_email}</span>
+                    : <span className="text-xs text-faint">no login (add an email)</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        <AddStaff departments={departments} onAdd={(display_name, role, department_id, email) =>
+          insert('staff', { display_name, role, department_id, invite_email: email || null })} />
+        <p className="mt-2 text-xs text-faint">
+          Add an email → that person signs up at <code>/login</code> with the same email and lands on their own screen.
+        </p>
       </Card>
     </div>
   );
@@ -175,14 +191,17 @@ function AddService({ departments, onAdd }: { departments: Row[]; onAdd: (name: 
   );
 }
 
-function AddStaff({ departments, onAdd }: { departments: Row[]; onAdd: (name: string, role: string, deptId: string | null) => void }) {
-  const [name, setName] = useState(''); const [role, setRole] = useState('staff'); const [deptId, setDeptId] = useState('');
+function AddStaff({ departments, onAdd }:
+  { departments: Row[]; onAdd: (name: string, role: string, deptId: string | null, email: string) => void }) {
+  const [name, setName] = useState(''); const [role, setRole] = useState('staff');
+  const [deptId, setDeptId] = useState(''); const [email, setEmail] = useState('');
   return (
-    <div className="flex items-end gap-2">
+    <div className="flex flex-wrap items-end gap-2">
       <div className="flex-1"><Field label="" placeholder="Staff name" value={name} onChange={(e) => setName(e.target.value)} /></div>
+      <div className="flex-1"><Field label="" type="email" placeholder="Login email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
       <Select value={role} onChange={setRole} options={['receptionist', 'staff', 'manager', 'org_admin'].map((r) => ({ v: r, l: r }))} placeholder="Role" />
       <Select value={deptId} onChange={setDeptId} options={departments.map((d) => ({ v: d.id, l: d.name }))} placeholder="Dept" />
-      <Button variant="ghost" onClick={() => { if (name) { onAdd(name, role, deptId || null); setName(''); } }}>Add</Button>
+      <Button variant="ghost" onClick={() => { if (name) { onAdd(name, role, deptId || null, email.trim()); setName(''); setEmail(''); } }}>Add</Button>
     </div>
   );
 }

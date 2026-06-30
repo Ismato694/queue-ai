@@ -35,7 +35,8 @@ export default function LoginPage() {
       const uid = data.session?.user?.id;
       if (!uid) { setMsg('Account created — check your email to confirm, then sign in.'); setMode('login'); return; }
 
-      // route each person to their own screen by role
+      // link any pending staff invite for this email (0031), then route by role
+      await sb.rpc('claim_staff_membership');
       const { data: me } = await sb.from('staff')
         .select('role, organization_id').eq('user_id', uid).maybeSingle();
       if (!me?.organization_id) { router.push('/onboarding'); return; }

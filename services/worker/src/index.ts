@@ -21,30 +21,34 @@ async function dispatchNotifications() {
   const { data } = await admin
     .from('notifications').select('*').eq('status', 'queued').limit(20);
   for (const n of data ?? []) {
-    const ok = await send(n);
+    const r = await send(n);
     await admin.from('notifications')
-      .update({ status: ok ? 'sent' : 'failed', sent_at: new Date().toISOString() })
+      .update({ status: r.ok ? 'sent' : 'failed', sent_at: new Date().toISOString(),
+                provider: r.provider, provider_ref: r.ref ?? null })
       .eq('id', n.id);
   }
 }
 
-async function send(n: Record<string, any>): Promise<boolean> {
+type SendResult = { ok: boolean; provider: string; ref?: string };
+
+async function send(n: Record<string, any>): Promise<SendResult> {
   const text = messageFor(n.event_type);
 
   // WhatsApp channel (Meta Cloud API) — needs the recipient's number (decrypt via RPC)
   if (n.channel === 'whatsapp' && process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID && admin) {
     const { data } = await admin.rpc('get_sms_target', { p_notification_id: n.id });
     const phone = (data as { phone?: string } | null)?.phone?.replace(/^\+/, '');
-    if (!phone) { console.warn(`[notify] no phone for ${n.id}`); return false; }
+    if (!phone) { console.warn(`[notify] no phone for ${n.id}`); return { ok: false, provider: 'whatsapp_cloud' }; }
     try {
       const res = await fetch(`https://graph.facebook.com/v21.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
         method: 'POST',
         headers: { authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'content-type': 'application/json' },
         body: JSON.stringify({ messaging_product: 'whatsapp', to: phone, type: 'text', text: { body: text } }),
       });
-      if (!res.ok) { console.error(`[notify] WhatsApp ${res.status}`); return false; }
-      return true;
-    } catch (e) { console.error('[notify] whatsapp error', e); return false; }
+      if (!res.ok) { console.error(`[notify] WhatsApp ${res.status}`); return { ok: false, provider: 'whatsapp_cloud' }; }
+      const body = await res.json().catch(() => ({}));
+      return { ok: true, provider: 'whatsapp_cloud', ref: body?.messages?.[0]?.id };
+    } catch (e) { console.error('[notify] whatsapp error', e); return { ok: false, provider: 'whatsapp_cloud' }; }
   }
 
   const termiiKey = process.env.TERMII_API_KEY;
@@ -52,7 +56,7 @@ async function send(n: Record<string, any>): Promise<boolean> {
     // resolve the (encrypted) recipient via the service-role-only RPC, then send
     const { data } = await admin.rpc('get_sms_target', { p_notification_id: n.id });
     const phone = (data as { phone?: string } | null)?.phone;
-    if (!phone) { console.warn(`[notify] no phone for ${n.id}`); return false; }
+    if (!phone) { console.warn(`[notify] no phone for ${n.id}`); return { ok: false, provider: 'termii' }; }
     try {
       const res = await fetch('https://api.ng.termii.com/api/sms/send', {
         method: 'POST',
@@ -62,12 +66,17 @@ async function send(n: Record<string, any>): Promise<boolean> {
           sms: text, type: 'plain', channel: 'generic', api_key: termiiKey,
         }),
       });
-      if (!res.ok) { console.error(`[notify] Termii ${res.status}`); return false; }
-      return true;
-    } catch (e) { console.error('[notify] send error', e); return false; }
+      const body = await res.json().catch(() => ({}));
+      // Termii returns 200 with a code; surface failures (insufficient balance, bad sender, etc.)
+      if (!res.ok || (body?.code && body.code !== 'ok')) {
+        console.error(`[notify] Termii ${res.status}`, body?.message ?? '');
+        return { ok: false, provider: 'termii', ref: body?.message };
+      }
+      return { ok: true, provider: 'termii', ref: body?.message_id };
+    } catch (e) { console.error('[notify] send error', e); return { ok: false, provider: 'termii' }; }
   }
   console.log(`[notify] (simulated) ${n.channel}:${n.event_type} -> "${text}" (${n.id})`);
-  return true; // simulated success in dev (no provider key)
+  return { ok: true, provider: 'simulated' }; // dev: no provider key
 }
 
 // ── No-show grace sweep (R4): called stages past their grace_deadline → no_show ──

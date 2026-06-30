@@ -11,6 +11,7 @@
 | **Multi-tenant core** (org/branch/dept/service/counter/staff) | ✓ | ✓ | ✅ | | | Ⓐ Ⓛ | RLS isolation test in CI; structure CRUD used live |
 | **RLS tenant isolation** | ✓ | ✓ | ✅ | | | Ⓐ | `0008` + `test/10_rls_isolation` |
 | **Auth + onboarding** (bootstrap org) | ✓ | ✓ | ✅ | | | Ⓛ | signup → onboarding verified live |
+| **Staff invite / per-role logins** | ✓ | ✓ | ✅ | | | ❌ | `0031` invite-by-email + `claim_staff_membership` on login; role-based redirect (admin→/admin, manager→/manager, etc.); admin email field; not live-tested |
 | **Flow Builder (F1)** + publish + templates | ✓ | ✓ | ✅ | | | Ⓛ | flows pages + `publish_flow`; 4 industry templates |
 | **Multi-stage pipeline (R1)** | ✓ | ✓ | ✅ | | | Ⓐ Ⓛ | smoke test + customer-journey UAT (6 stages) |
 | **Join: Receptionist** (create_walkin) | ✓ | ✓ | ✅ | | | Ⓛ | add-walk-in verified live |
@@ -24,10 +25,10 @@
 | **Queue verbs: transfer / skip / delay / requeue** | ✓ | ✓ | ✅ | | | ❌ | `0025` RPCs (`transfer_stage`/`delay_stage`/`requeue_stage`/`skip_stage`) via `app.assert_transition`; staff-app buttons wired; not live-tested |
 | **ETA + Trust Engine (F11)** (range+confidence+reasons) | ✓ | ✓ | ✅ | | | Ⓛ | `get_visit_status`; live UAT showed conf+reasons |
 | **Trust accuracy feedback loop (07 §11)** | ✓ | ✓ | ✅ | | | ❌ | `0026` snapshot→score loop (worker, 30s) + `prediction_accuracy` RPC; ETA-accuracy % on manager dashboard; not live-tested |
-| **"Leave now" alert (leave_by / Law #0)** | ✓ | ✓ | ✅ | | | ❌ | `0030`: patient sets travel time → `process_leave_now` (worker, 30s) auto-activates + notifies when dept wait ≈ travel; visit-page picker + banner; needs worker running; not live-tested |
+| **"Leave now" alert (leave_by / Law #0)** | ✓ | ✓ | ✅ | | | ❌ | `0030`: travel time (manual picker **or** GPS-auto via `set_travel_from_gps` `0032`) → `process_leave_now` (worker, 30s) auto-activates + notifies when dept wait ≈ travel; visit-page picker + banner; needs worker running; not live-tested |
 | **Journey Timeline (F4)** | ✓ | ✓ | ✅ | | | Ⓛ | visit page; UAT |
 | **Grace window / no-show (R4)** | ✓ | ✓ | ✅ | | | ❌ | sweep in worker + `requeue_stage` grace path (`0025`); not live-tested |
-| **Notifications (R6)** push/SMS/email | ✓ | ✓ | | ◑ | | ❌ | real SMS via Termii (`get_sms_target` `0027` + worker; live when `TERMII_API_KEY` set, else simulated); push/email still not sent |
+| **Notifications (R6)** push/SMS/email | ✓ | ✓ | | ◑ | | ❌ | real SMS via Termii + WhatsApp (Cloud API) in worker with provider/ref tagging + failure detection; WhatsApp setup in `docs/WHATSAPP-SETUP.md`; live when keys set, else simulated; push/email still not sent |
 | **Privacy public display (R3)** | ✓ | ✓ | ✅ | | | Ⓛ | numbers-only; UAT confirmed no names |
 | **Reception dashboard** | ✓ | ✓ | ✅ | | | Ⓛ | verified live |
 | **Staff dashboard** (1-tap + status) | ✓ | ✓ | ✅ | | | ❌ | `set_staff_status` RPC; not live-tested |
